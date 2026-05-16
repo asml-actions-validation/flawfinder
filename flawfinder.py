@@ -132,7 +132,7 @@ def to_json(o):
     return json.dumps(o, default=lambda o: o.__dict__, sort_keys=False, indent=2)
 
 
-class SonarLogger(object):
+class SonarLogger(object):  # Python 2 compat: explicit new-style class
     _hitlist = None
 
     def __init__ (self, hits):
@@ -149,7 +149,7 @@ class SonarLogger(object):
         str += '</results>'
         return str
 
-class SonarRulesLogger(object):
+class SonarRulesLogger(object):  # Python 2 compat: explicit new-style class
     _ruleset = None
 
     def __init__(self, rules):
@@ -198,7 +198,7 @@ class SonarRulesLogger(object):
 # We intentionally merge all of flawfinder's functionality into 1 file
 # so it's trivial to copy & use elsewhere.
 
-class SarifLogger(object):
+class SarifLogger(object):  # Python 2 compat: explicit new-style class
     _hitlist = None
     TOOL_NAME = "Flawfinder"
     TOOL_URL = "https://dwheeler.com/flawfinder/"
@@ -583,7 +583,7 @@ link_cwe_pattern = re.compile(r'(CWE-([1-9][0-9]+))([,()!/])')
 find_cwe_pattern = re.compile(r'\(CWE-[^)]*\)')
 
 
-class Hit(object):
+class Hit(object):  # Python 2 compat: explicit new-style class
     """
     Each instance of Hit is a warning of some kind in a source code file.
     See the rulesets, which define the conditions for triggering a hit.
@@ -766,13 +766,13 @@ class SafeUnpickler(pickle.Unpickler):
 
     def find_class(self, module, name):
         if module in self._ALLOWED_MODULES and (name == 'Hit' or name in _hooks):
-            return super(SafeUnpickler, self).find_class(module, name)
+            return super(SafeUnpickler, self).find_class(module, name)  # Python 2 compat
         raise pickle.UnpicklingError(
             "Blocked unsafe class in hitlist pickle: {}.{}".format(module, name))
 
 
 def add_warning(hit):
-    global hitlist, num_ignored_hits
+    global num_ignored_hits
     if show_inputs and not hit.input:
         return
     if required_regex and (required_regex_compiled.search(hit.warning) is
@@ -2261,8 +2261,8 @@ def process_file_args(files, patch_infos):
                 # name, and it exists, we'll process it without complaint.
                 if (h(f).startswith("\xe2\x80\x93") or
                         h(f).startswith("\xe2\x80\x94") or
-                        h(f).startswith(u"\u2013") or
-                        h(f).startswith(u"\u2014")):
+                        h(f).startswith("\u2013") or
+                        h(f).startswith("\u2014")):
                     print_warning(
                         "Skipping non-existent filename starting with em dash or en dash "
                         + h(f))
@@ -2535,7 +2535,6 @@ def hitlist_sort_key(hit):
 
 
 def show_final_results():
-    global hitlist
     global error_level_exceeded
     count = 0
     count_per_level = {}
