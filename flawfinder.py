@@ -801,7 +801,7 @@ def extract_c_parameters(text, pos=0):
     while i < len(text):
         if text[i] == '(':
             break
-        elif text[i] in string.whitespace:
+        if text[i] in string.whitespace:
             i += 1
         else:
             return []
@@ -1781,7 +1781,7 @@ def c_valid_match(text, position):
         c = text[i]
         if c == '(':
             return 1
-        elif c in string.whitespace:
+        if c in string.whitespace:
             i += 1
         else:
             if falsepositive:
@@ -2517,16 +2517,15 @@ def process_files():
         f = open(loadhitlist, "rb")
         hitlist = SafeUnpickler(f).load()
         return True
-    else:
-        patch_infos = None
-        if patch_file != "":
-            patch_infos = load_patch_info(patch_file)
-        files = sys.argv[1:]
-        if not files:
-            print("*** No input files")
-            return None
-        process_file_args(files, patch_infos)
-        return True
+    patch_infos = None
+    if patch_file != "":
+        patch_infos = load_patch_info(patch_file)
+    files = sys.argv[1:]
+    if not files:
+        print("*** No input files")
+        return None
+    process_file_args(files, patch_infos)
+    return True
 
 
 def hitlist_sort_key(hit):
@@ -2558,6 +2557,7 @@ def show_final_results():
     # <ul> so that the format differentiates each entry.
     # I'm not using <ol>, because its numbers might be confused with
     # the risk levels or line numbers.
+    diff_hitlist = []
     if diffhitlist_filename:
         diff_file = open(diffhitlist_filename, 'rb')
         diff_hitlist = SafeUnpickler(diff_file).load()
