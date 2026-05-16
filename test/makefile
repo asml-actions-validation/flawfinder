@@ -2,9 +2,7 @@
 # Released under the General Public License (GPL) version 2 or later.
 # (C) 2001-2017 David A. Wheeler.
 
-PYTHON=python
-PYTHON2=python2
-PYTHON3=python3
+PYTHON=python3
 FLAWFINDER=../flawfinder.py
 SETUPPY=../setup.py
 
@@ -88,13 +86,7 @@ test: test_001 test_002 test_003 test_004 test_005 test_006 test_007 test_008 \
 	  test_009 test_010
 	@echo 'All tests pass!'
 
-# Usual check routine. Run all tests using *both* python2 and python3.
-check:
-	@echo "Testing with $(PYTHON2)"
-	@PYTHON="$(PYTHON2)" $(MAKE) test
-	@echo
-	@echo "Testing with $(PYTHON3)"
-	@PYTHON="$(PYTHON3)" $(MAKE) test
+check: test
 
 # Run "make test-is-correct" if the results are as expected.
 test-is-correct: test-results.txt
