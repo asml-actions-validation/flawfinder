@@ -883,8 +883,10 @@ def extract_c_parameters(text, pos=0):
 # In practice, this doesn't seem to be a problem; gettext() is usually
 # wrapped around the entire parameter.
 # The ?s makes it posible to match multi-line strings.
+# pylint: disable=implicit-str-concat
 gettext_pattern = re.compile(r'(?s)^\s*' 'gettext' r'\s*\((.*)\)\s*$')
 undersc_pattern = re.compile(r'(?s)^\s*' '_(T(EXT)?)?' r'\s*\((.*)\)\s*$')
+# pylint: enable=implicit-str-concat
 
 
 def strip_i18n(text):
