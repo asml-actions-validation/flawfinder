@@ -22,7 +22,7 @@ Examining test2.c <br>
   Does not check for buffer overflows (<a
   href="https://cwe.mitre.org/data/definitions/120.html">CWE-120</a>, <a
   href="https://cwe.mitre.org/data/definitions/20.html">CWE-20</a>). Use
-  fgets() instead. </i>
+  fgets() instead. </i></li>
 <pre>
  gets(f);
 </pre>
@@ -32,7 +32,7 @@ Examining test2.c <br>
   href="https://cwe.mitre.org/data/definitions/120.html">CWE-120</a>).
   Consider strcat_s, strlcat, snprintf, or automatically resizing strings.
   Risk is high; the length parameter appears to be a constant, instead of
-  computing the number of characters left. </i>
+  computing the number of characters left. </i></li>
 <pre>
   strncat(d,s,sizeof(d)); /* Misuse - this should be flagged as riskier. */
 </pre>
@@ -42,7 +42,7 @@ Examining test2.c <br>
   href="https://cwe.mitre.org/data/definitions/120.html">CWE-120</a>).
   Consider strcat_s, strlcat, or automatically resizing strings. Risk is
   high; the length parameter appears to be a constant, instead of computing
-  the number of characters left. </i>
+  the number of characters left. </i></li>
 <pre>
   _tcsncat(d,s,sizeof(d)); /* Misuse - flag as riskier */
 </pre>
@@ -50,7 +50,7 @@ Examining test2.c <br>
   Requires maximum length in CHARACTERS, not bytes (<a
   href="https://cwe.mitre.org/data/definitions/120.html">CWE-120</a>). Risk
   is high, it appears that the size is given as bytes, but the function
-  requires size as characters. </i>
+  requires size as characters. </i></li>
 <pre>
   MultiByteToWideChar(CP_ACP,0,szName,-1,wszUserName,sizeof(wszUserName));
 </pre>
@@ -58,21 +58,21 @@ Examining test2.c <br>
   Requires maximum length in CHARACTERS, not bytes (<a
   href="https://cwe.mitre.org/data/definitions/120.html">CWE-120</a>). Risk
   is high, it appears that the size is given as bytes, but the function
-  requires size as characters. </i>
+  requires size as characters. </i></li>
 <pre>
   MultiByteToWideChar(CP_ACP,0,szName,-1,wszUserName,sizeof wszUserName);
 </pre>
 <li>test.c:77: <b>  [5] </b> (misc) <i> SetSecurityDescriptorDacl:
   Never create NULL ACLs; an attacker can set it to Everyone (Deny All
   Access), which would even forbid administrator access (<a
-  href="https://cwe.mitre.org/data/definitions/732.html">CWE-732</a>). </i>
+  href="https://cwe.mitre.org/data/definitions/732.html">CWE-732</a>). </i></li>
 <pre>
   SetSecurityDescriptorDacl(&amp;sd,TRUE,NULL,FALSE);
 </pre>
 <li>test.c:77: <b>  [5] </b> (misc) <i> SetSecurityDescriptorDacl:
   Never create NULL ACLs; an attacker can set it to Everyone (Deny All
   Access), which would even forbid administrator access (<a
-  href="https://cwe.mitre.org/data/definitions/732.html">CWE-732</a>). </i>
+  href="https://cwe.mitre.org/data/definitions/732.html">CWE-732</a>). </i></li>
 <pre>
   SetSecurityDescriptorDacl(&amp;sd,TRUE,NULL,FALSE);
 </pre>
@@ -80,35 +80,35 @@ Examining test2.c <br>
   Does not check for buffer overflows when copying to destination [MS-banned]
   (<a href="https://cwe.mitre.org/data/definitions/120.html">CWE-120</a>).
   Consider using snprintf, strcpy_s, or strlcpy (warning: strncpy easily
-  misused). </i>
+  misused). </i></li>
 <pre>
  strcpy(b, a);
 </pre>
 <li>test.c:20: <b>  [4] </b> (buffer) <i> sprintf:
   Does not check for buffer overflows (<a
   href="https://cwe.mitre.org/data/definitions/120.html">CWE-120</a>). Use
-  sprintf_s, snprintf, or vsnprintf. </i>
+  sprintf_s, snprintf, or vsnprintf. </i></li>
 <pre>
  sprintf(s, "hello %s", bug);
 </pre>
 <li>test.c:21: <b>  [4] </b> (buffer) <i> sprintf:
   Does not check for buffer overflows (<a
   href="https://cwe.mitre.org/data/definitions/120.html">CWE-120</a>). Use
-  sprintf_s, snprintf, or vsnprintf. </i>
+  sprintf_s, snprintf, or vsnprintf. </i></li>
 <pre>
  sprintf(s, gettext("hello %s"), bug);
 </pre>
 <li>test.c:22: <b>  [4] </b> (format) <i> sprintf:
   Potential format string problem (<a
   href="https://cwe.mitre.org/data/definitions/134.html">CWE-134</a>). Make
-  format string constant. </i>
+  format string constant. </i></li>
 <pre>
  sprintf(s, unknown, bug);
 </pre>
 <li>test.c:23: <b>  [4] </b> (format) <i> printf:
   If format strings can be influenced by an attacker, they can be exploited
   (<a href="https://cwe.mitre.org/data/definitions/134.html">CWE-134</a>).
-  Use a constant for the format specification. </i>
+  Use a constant for the format specification. </i></li>
 <pre>
  printf(bf, x);
 </pre>
@@ -117,7 +117,7 @@ Examining test2.c <br>
   buffer overflows (<a
   href="https://cwe.mitre.org/data/definitions/120.html">CWE-120</a>, <a
   href="https://cwe.mitre.org/data/definitions/20.html">CWE-20</a>). Specify
-  a limit to %s, or use a different input function. </i>
+  a limit to %s, or use a different input function. </i></li>
 <pre>
  scanf("%s", s);
 </pre>
@@ -126,7 +126,7 @@ Examining test2.c <br>
   buffer overflows (<a
   href="https://cwe.mitre.org/data/definitions/120.html">CWE-120</a>, <a
   href="https://cwe.mitre.org/data/definitions/20.html">CWE-20</a>). Specify
-  a limit to %s, or use a different input function. </i>
+  a limit to %s, or use a different input function. </i></li>
 <pre>
  scanf("%s", s);
 </pre>
@@ -134,7 +134,7 @@ Examining test2.c <br>
   If syslog's format strings can be influenced by an attacker, they can be
   exploited (<a
   href="https://cwe.mitre.org/data/definitions/134.html">CWE-134</a>). Use a
-  constant format string for syslog. </i>
+  constant format string for syslog. </i></li>
 <pre>
  syslog(LOG_ERR, attacker_string);
 </pre>
@@ -142,14 +142,14 @@ Examining test2.c <br>
   Does not check for buffer overflows when copying to destination [MS-banned]
   (<a href="https://cwe.mitre.org/data/definitions/120.html">CWE-120</a>).
   Consider using a function version that stops copying at the end of the
-  buffer. </i>
+  buffer. </i></li>
 <pre>
   _mbscpy(d,s); /* like strcpy, this doesn't check for buffer overflow */
 </pre>
 <li>test.c:56: <b>  [4] </b> (buffer) <i> lstrcat:
   Does not check for buffer overflows when concatenating to destination
   [MS-banned] (<a
-  href="https://cwe.mitre.org/data/definitions/120.html">CWE-120</a>). </i>
+  href="https://cwe.mitre.org/data/definitions/120.html">CWE-120</a>). </i></li>
 <pre>
   lstrcat(d,s);
 </pre>
@@ -158,7 +158,7 @@ Examining test2.c <br>
   href="https://cwe.mitre.org/data/definitions/78.html">CWE-78</a>). Specify
   the application path in the first argument, NOT as part of the second, or
   embedded spaces could allow an attacker to force a different program to
-  run. </i>
+  run. </i></li>
 <pre>
   CreateProcess(NULL, "C:\\Program Files\\GoodGuy\\GoodGuy.exe -x", "");
 </pre>
@@ -167,7 +167,7 @@ Examining test2.c <br>
   href="https://cwe.mitre.org/data/definitions/78.html">CWE-78</a>). Specify
   the application path in the first argument, NOT as part of the second, or
   embedded spaces could allow an attacker to force a different program to
-  run. </i>
+  run. </i></li>
 <pre>
   CreateProcess(NULL, "C:\\Program Files\\GoodGuy\\GoodGuy.exe -x", "");
 </pre>
@@ -177,7 +177,7 @@ Examining test2.c <br>
   href="https://cwe.mitre.org/data/definitions/829.html">CWE-829</a>, <a
   href="https://cwe.mitre.org/data/definitions/20.html">CWE-20</a>). Use a
   flag like LOAD_LIBRARY_SEARCH_SYSTEM32 or
-  LOAD_LIBRARY_SEARCH_APPLICATION_DIR to search only desired folders. </i>
+  LOAD_LIBRARY_SEARCH_APPLICATION_DIR to search only desired folders. </i></li>
 <pre>
   (void) LoadLibraryEx(L"user32.dll", nullptr, LOAD_LIBRARY_AS_DATAFILE);
 </pre>
@@ -185,7 +185,7 @@ Examining test2.c <br>
   Some older implementations do not protect against internal buffer overflows
   (<a href="https://cwe.mitre.org/data/definitions/120.html">CWE-120</a>, <a
   href="https://cwe.mitre.org/data/definitions/20.html">CWE-20</a>). Check
-  implementation on installation, or limit the size of all string inputs. </i>
+  implementation on installation, or limit the size of all string inputs. </i></li>
 <pre>
     while ((optc = getopt_long (argc, argv, "a",longopts, NULL )) != EOF) {
 </pre>
@@ -193,7 +193,7 @@ Examining test2.c <br>
   Does not check for buffer overflows when copying to destination [MS-banned]
   (<a href="https://cwe.mitre.org/data/definitions/120.html">CWE-120</a>).
   Consider using snprintf, strcpy_s, or strlcpy (warning: strncpy easily
-  misused). Risk is low because the source is a constant string. </i>
+  misused). Risk is low because the source is a constant string. </i></li>
 <pre>
  strcpy(a, gettext("Hello there")); // Did this work?
 </pre>
@@ -201,7 +201,7 @@ Examining test2.c <br>
   Does not check for buffer overflows (<a
   href="https://cwe.mitre.org/data/definitions/120.html">CWE-120</a>). Use
   sprintf_s, snprintf, or vsnprintf. Risk is low because the source has a
-  constant maximum length. </i>
+  constant maximum length. </i></li>
 <pre>
  sprintf(s, "hello");
 </pre>
@@ -211,7 +211,7 @@ Examining test2.c <br>
   href="https://cwe.mitre.org/data/definitions/119.html">CWE-119</a>!/<a
   href="https://cwe.mitre.org/data/definitions/120.html">CWE-120</a>).
   Perform bounds checking, use functions that limit length, or ensure that
-  the size is larger than the maximum possible length. </i>
+  the size is larger than the maximum possible length. </i></li>
 <pre>
   char d[20];
 </pre>
@@ -221,35 +221,35 @@ Examining test2.c <br>
   href="https://cwe.mitre.org/data/definitions/119.html">CWE-119</a>!/<a
   href="https://cwe.mitre.org/data/definitions/120.html">CWE-120</a>).
   Perform bounds checking, use functions that limit length, or ensure that
-  the size is larger than the maximum possible length. </i>
+  the size is larger than the maximum possible length. </i></li>
 <pre>
   char s[20];
 </pre>
 <li>test.c:50: <b>  [2] </b> (buffer) <i> memcpy:
   Does not check for buffer overflows when copying to destination (<a
   href="https://cwe.mitre.org/data/definitions/120.html">CWE-120</a>). Make
-  sure destination can always hold the source data. </i>
+  sure destination can always hold the source data. </i></li>
 <pre>
   memcpy(d,s); // fail - no size
 </pre>
 <li>test.c:53: <b>  [2] </b> (buffer) <i> memcpy:
   Does not check for buffer overflows when copying to destination (<a
   href="https://cwe.mitre.org/data/definitions/120.html">CWE-120</a>). Make
-  sure destination can always hold the source data. </i>
+  sure destination can always hold the source data. </i></li>
 <pre>
   memcpy(&amp;n,s,sizeof(s)); // fail - sizeof not of destination
 </pre>
 <li>test.c:54: <b>  [2] </b> (buffer) <i> memcpy:
   Does not check for buffer overflows when copying to destination (<a
   href="https://cwe.mitre.org/data/definitions/120.html">CWE-120</a>). Make
-  sure destination can always hold the source data. </i>
+  sure destination can always hold the source data. </i></li>
 <pre>
   memcpy(d,s,n); // fail - size unguessable
 </pre>
 <li>test.c:55: <b>  [2] </b> (buffer) <i> CopyMemory:
   Does not check for buffer overflows when copying to destination (<a
   href="https://cwe.mitre.org/data/definitions/120.html">CWE-120</a>). Make
-  sure destination can always hold the source data. </i>
+  sure destination can always hold the source data. </i></li>
 <pre>
   CopyMemory(d,s);
 </pre>
@@ -258,7 +258,7 @@ Examining test2.c <br>
   force the opening of special file type (e.g., device files), move things
   around to create a race condition, control its ancestors, or change its
   contents? (<a
-  href="https://cwe.mitre.org/data/definitions/362.html">CWE-362</a>). </i>
+  href="https://cwe.mitre.org/data/definitions/362.html">CWE-362</a>). </i></li>
 <pre>
   f = fopen("/etc/passwd", "r"); 
 </pre>
@@ -266,7 +266,7 @@ Examining test2.c <br>
   Does not check for buffer overflows when copying to destination [MS-banned]
   (<a href="https://cwe.mitre.org/data/definitions/120.html">CWE-120</a>).
   Consider using snprintf, strcpy_s, or strlcpy (warning: strncpy easily
-  misused). Risk is low because the source is a constant character. </i>
+  misused). Risk is low because the source is a constant character. </i></li>
 <pre>
  strcpy(a, "\n"); // Did this work?
 </pre>
@@ -274,28 +274,28 @@ Examining test2.c <br>
   Does not check for buffer overflows (<a
   href="https://cwe.mitre.org/data/definitions/120.html">CWE-120</a>). Use
   sprintf_s, snprintf, or vsnprintf. Risk is low because the source is a
-  constant character. </i>
+  constant character. </i></li>
 <pre>
  sprintf(s, "\n");
 </pre>
 <li>test.c:26: <b>  [1] </b> (buffer) <i> scanf:
   It's unclear if the %s limit in the format string is small enough (<a
   href="https://cwe.mitre.org/data/definitions/120.html">CWE-120</a>). Check
-  that the limit is sufficiently small, or use a different input function. </i>
+  that the limit is sufficiently small, or use a different input function. </i></li>
 <pre>
  scanf("%10s", s);
 </pre>
 <li>test.c:57: <b>  [1] </b> (buffer) <i> strncpy:
   Easily used incorrectly; doesn't always \0-terminate or check for invalid
   pointers [MS-banned] (<a
-  href="https://cwe.mitre.org/data/definitions/120.html">CWE-120</a>). </i>
+  href="https://cwe.mitre.org/data/definitions/120.html">CWE-120</a>). </i></li>
 <pre>
   strncpy(d,s);
 </pre>
 <li>test.c:58: <b>  [1] </b> (buffer) <i> _tcsncpy:
   Easily used incorrectly; doesn't always \0-terminate or check for invalid
   pointers [MS-banned] (<a
-  href="https://cwe.mitre.org/data/definitions/120.html">CWE-120</a>). </i>
+  href="https://cwe.mitre.org/data/definitions/120.html">CWE-120</a>). </i></li>
 <pre>
   _tcsncpy(d,s);
 </pre>
@@ -303,28 +303,28 @@ Examining test2.c <br>
   Easily used incorrectly (e.g., incorrectly computing the correct maximum
   size to add) [MS-banned] (<a
   href="https://cwe.mitre.org/data/definitions/120.html">CWE-120</a>).
-  Consider strcat_s, strlcat, snprintf, or automatically resizing strings. </i>
+  Consider strcat_s, strlcat, snprintf, or automatically resizing strings. </i></li>
 <pre>
   strncat(d,s,10);
 </pre>
 <li>test.c:62: <b>  [1] </b> (buffer) <i> strlen:
   Does not handle strings that are not \0-terminated; if given one it may
   perform an over-read (it could cause a crash if unprotected) (<a
-  href="https://cwe.mitre.org/data/definitions/126.html">CWE-126</a>). </i>
+  href="https://cwe.mitre.org/data/definitions/126.html">CWE-126</a>). </i></li>
 <pre>
   n = strlen(d);
 </pre>
 <li>test.c:68: <b>  [1] </b> (buffer) <i> MultiByteToWideChar:
   Requires maximum length in CHARACTERS, not bytes (<a
   href="https://cwe.mitre.org/data/definitions/120.html">CWE-120</a>). Risk
-  is very low, the length appears to be in characters not bytes. </i>
+  is very low, the length appears to be in characters not bytes. </i></li>
 <pre>
   MultiByteToWideChar(CP_ACP,0,szName,-1,wszUserName,sizeof(wszUserName)/sizeof(wszUserName[0]));
 </pre>
 <li>test.c:70: <b>  [1] </b> (buffer) <i> MultiByteToWideChar:
   Requires maximum length in CHARACTERS, not bytes (<a
   href="https://cwe.mitre.org/data/definitions/120.html">CWE-120</a>). Risk
-  is very low, the length appears to be in characters not bytes. </i>
+  is very low, the length appears to be in characters not bytes. </i></li>
 <pre>
   MultiByteToWideChar(CP_ACP,0,szName,-1,wszUserName,sizeof wszUserName /sizeof(wszUserName[0]));
 </pre>
