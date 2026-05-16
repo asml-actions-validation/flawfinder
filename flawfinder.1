@@ -609,10 +609,9 @@ Save all resulting hits (the "hitlist") to F.
 .TP
 \fB\-\-loadhitlist=\fR\fIF\fR
 Load the hitlist from F instead of analyzing source programs.
-Warning: Do \fInot\fR load hitlists from untrusted sources
-(for security reasons).
-These are internally implemented using Python's "pickle" facility,
-which trusts the input.
+Hitlists are intended for use by the same user who created them.
+A hitlist from an untrusted source could contain misleading results,
+such as fabricated hits or omitted findings.
 Note that stored hitlists often cannot be read when using an older version
 of Python, in particular, if savehitlist was used but
 flawfinder was run using Python 3,
@@ -622,8 +621,8 @@ the hitlist can't be loaded by running flawfinder with Python 2.
 \fB\-\-diffhitlist=\fR\fIF\fR
 Show only hits (loaded or analyzed) not in F.
 F was presumably created previously using \-\-savehitlist.
-Warning: Do \fInot\fR diff hitlists from untrusted sources
-(for security reasons).
+A hitlist from an untrusted source could contain misleading results;
+use only hitlists you created yourself.
 If the \-\-loadhitlist option is not provided, this will show the hits in
 the analyzed source code files that were not previously stored in F.
 If used along with \-\-loadhitlist, this will show the hits in the
@@ -1193,12 +1192,10 @@ COM1-COM9, and LPT1-LPT9, optionally followed by an extension
 (Windows is case-insensitive).
 .\" See 'Writing Secure Code' by Howard and LeBlanc, pg. 223
 .PP
-Do \fInot\fR load or diff hitlists from untrusted sources.
-They are implemented using the Python pickle module, and the pickle
-module is not intended to be secure against
-erroneous or maliciously constructed data.
-Stored hitlists are intended for later use by the same user who created
-the hitlist; in that context this restriction is not a problem.
+Stored hitlists are intended for use by the same user who created them.
+A hitlist from an untrusted source could contain misleading results,
+such as fabricated hits or omitted findings; always use hitlists you
+created yourself.
 
 .SH BUGS
 .PP

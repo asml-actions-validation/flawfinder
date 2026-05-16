@@ -8,6 +8,13 @@
 	  As defense in depth, h() and show_csv() also strip control
 	  characters from filenames before output.
 	  Reported by Dan Lenz.
+	* Reject malicious pickles on hitlist load. Hitlists (--loadhitlist,
+	  --diffhitlist) are now loaded via SafeUnpickler, a restricted
+	  unpickler that only allows the specific classes and hook functions
+	  that appear in legitimate hitlists. Arbitrary code execution from
+	  a crafted hitlist file is blocked. A @hook decorator registers each
+	  hook function, and a startup check ensures the allowlist stays in
+	  sync with the ruleset automatically.
 	* Added Sonar output format (--sonar). Thanks to Patschkowski.
 	* Updated CWE list delimiters.
 	* Added missing CWEs to FF1057 warning text.

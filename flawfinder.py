@@ -738,6 +738,39 @@ class Hit(object):
 hitlist = []
 
 
+_hooks = {}  # name -> function; populated by the @hook decorator
+
+
+def hook(fn):
+    """Decorator that registers fn as a valid flawfinder ruleset hook.
+
+    Serves two purposes: it populates the allowlist used by SafeUnpickler
+    when loading saved hitlists, and it enables startup validation that every
+    hook referenced in the ruleset has been registered (see _check_ruleset_hooks).
+    """
+    _hooks[fn.__name__] = fn
+    return fn
+
+
+class SafeUnpickler(pickle.Unpickler):
+    """Unpickler restricted to Hit and the functions registered with @hook.
+
+    A malicious pickle stream can execute arbitrary code during loading.
+    This subclass overrides find_class() to block everything except the
+    symbols that legitimately appear in a saved hitlist.
+    Works in Python 2 and Python 3.
+    """
+
+    # flawfinder may be run as __main__ or imported as a module.
+    _ALLOWED_MODULES = frozenset({'__main__', 'flawfinder'})
+
+    def find_class(self, module, name):
+        if module in self._ALLOWED_MODULES and (name == 'Hit' or name in _hooks):
+            return super(SafeUnpickler, self).find_class(module, name)
+        raise pickle.UnpicklingError(
+            "Blocked unsafe class in hitlist pickle: {}.{}".format(module, name))
+
+
 def add_warning(hit):
     global hitlist, num_ignored_hits
     if show_inputs and not hit.input:
@@ -891,6 +924,7 @@ def c_constant_string(text):
 p_memcpy_sizeof = re.compile(r'sizeof\s*\(\s*([^)\s]*)\s*\)')
 p_memcpy_param_amp = re.compile(r'&?\s*(.*)')
 
+@hook
 def c_memcpy(hit):
     if len(hit.parameters) < 4: # 3 parameters
         add_warning(hit)
@@ -902,6 +936,7 @@ def c_memcpy(hit):
         add_warning(hit)
 
 
+@hook
 def c_buffer(hit):
     source_position = hit.source_position
     if source_position <= len(hit.parameters) - 1:
@@ -924,6 +959,7 @@ p_dangerous_strncat = re.compile(r'^\s*sizeof\s*(\(\s*)?[A-Za-z_$0-9]+'
 p_looks_like_constant = re.compile(r'^\s*[A-Z][A-Z_$0-9]+\s*(-\s*1\s*)?$')
 
 
+@hook
 def c_strncat(hit):
     if len(hit.parameters) > 3:
         # A common mistake is to think that when calling strncat(dest,src,len),
@@ -959,6 +995,7 @@ def c_strncat(hit):
     c_buffer(hit)
 
 
+@hook
 def c_printf(hit):
     format_position = hit.format_position
     if format_position <= len(hit.parameters) - 1:
@@ -981,6 +1018,7 @@ p_dangerous_sprintf_format = re.compile(r'%-?([0-9]+|\*)?s')
 
 
 # sprintf has both buffer and format vulnerabilities.
+@hook
 def c_sprintf(hit):
     source_position = hit.source_position
     if hit.parameters is None:
@@ -1018,6 +1056,7 @@ p_dangerous_scanf_format = re.compile(r'%s')
 p_low_risk_scanf_format = re.compile(r'%[0-9]+s')
 
 
+@hook
 def c_scanf(hit):
     format_position = hit.format_position
     if format_position <= len(hit.parameters) - 1:
@@ -1055,6 +1094,7 @@ p_safe_multi_byte = re.compile(
     r'/\s*sizeof\s*\(\s*?[A-Za-z_$0-9]+\s*\[\s*0\s*\]\)\s*(-\s*1\s*)?$')
 
 
+@hook
 def c_multi_byte_to_wide_char(hit):
     # Unfortunately, this doesn't detect bad calls when it's a #define or
     # constant set by a sizeof(), but trying to do so would create
@@ -1079,6 +1119,7 @@ def c_multi_byte_to_wide_char(hit):
 p_null_text = re.compile(r'^ *(NULL|0|0x0) *$')
 
 
+@hook
 def c_hit_if_null(hit):
     null_position = hit.check_for_null
     if null_position <= len(hit.parameters) - 1:
@@ -1093,6 +1134,7 @@ def c_hit_if_null(hit):
 p_static_array = re.compile(r'^[A-Za-z_]+\s+[A-Za-z0-9_$,\s\*()]+\[[^]]')
 
 
+@hook
 def c_static_array(hit):
     # This is cheating, but it does the job for most real code.
     # In some cases it will match something that it shouldn't.
@@ -1103,6 +1145,7 @@ def c_static_array(hit):
         add_warning(hit)  # Found a static array, warn about it.
 
 
+@hook
 def cpp_unsafe_stl(hit):
     # Use one of the overloaded classes from the STL in C++14 and higher
     # instead of the <C++14 versions of theses functions that did not
@@ -1127,6 +1170,7 @@ safe_load_library_flags = [
     'LOAD_LIBRARY_SAFE_CURRENT_DIRS'
 ]
 
+@hook
 def load_library_ex(hit):
     # If parameter 3 has one of the flags below, it's safe.
     if (len(hit.parameters) >= 4 and
@@ -1134,12 +1178,14 @@ def load_library_ex(hit):
         return
     normal(hit)
 
+@hook
 def normal(hit):
     add_warning(hit)
 
 # Ignore "system" if it's "system::" (that is, a C++ namespace such as
 # boost::system::...), because that produces too many false positives.
 # We ignore spaces before "::"
+@hook
 def found_system(hit):
     follow_text = hit.lookahead[len(hit.name):].lstrip()
     if not follow_text.startswith('::'):
@@ -1694,6 +1740,20 @@ template_ruleset = {
     # This is a template for adding new entries (the key is impossible):
     "9": (normal, 2, "", "", "tmpfile", "", {}),
 }
+
+# Validate that every hook function referenced in the rulesets has been
+# registered with @hook.  This runs at import time so a missing @hook
+# decorator is caught immediately, not only when loading a saved hitlist.
+def _check_ruleset_hooks(ruleset):
+    for entry in ruleset.values():
+        fn = entry[0]  # first element of each tuple is the hook function
+        if fn.__name__ not in _hooks:
+            raise AssertionError(
+                "Hook function {!r} used in ruleset but not decorated "
+                "with @hook; add the decorator to fix.".format(fn.__name__))
+
+_check_ruleset_hooks(c_ruleset)
+_check_ruleset_hooks(template_ruleset)
 
 
 def find_column(text, position):
@@ -2304,8 +2364,12 @@ flawfinder [--help | -h] [--version] [--listrules]
               Save all hits (the "hitlist") to F.
   --loadhitlist=F
               Load hits from F instead of analyzing source programs.
+              Only use hitlists you created; untrusted hitlists could
+              contain misleading results.
   --diffhitlist=F
               Show only hits (loaded or analyzed) not in F.
+              Only use hitlists you created; untrusted hitlists could
+              contain misleading results.
 
 
   For more information, please consult the manpage or available
@@ -2451,7 +2515,7 @@ def process_files():
     global hitlist
     if loadhitlist:
         f = open(loadhitlist, "rb")
-        hitlist = pickle.load(f)
+        hitlist = SafeUnpickler(f).load()
         return True
     else:
         patch_infos = None
@@ -2497,7 +2561,7 @@ def show_final_results():
     # the risk levels or line numbers.
     if diffhitlist_filename:
         diff_file = open(diffhitlist_filename, 'rb')
-        diff_hitlist = pickle.load(diff_file)
+        diff_hitlist = SafeUnpickler(diff_file).load()
     if output_format:
         print("<ul>")
     for hit in hitlist:
