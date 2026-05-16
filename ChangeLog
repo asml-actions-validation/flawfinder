@@ -1,3 +1,20 @@
+2026-05-16 David A. Wheeler
+	* Fix terminal injection vulnerability via crafted filenames.
+	  A malicious file whose name contained ANSI escape sequences
+	  (e.g. ESC[2K CR ESC[32m[OK]...) could cause flawfinder's
+	  terminal output to be overwritten, e.g., so it falsely appeared
+	  that no security issues were found. Filenames containing
+	  control characters are now rejected with a warning.
+	  As defense in depth, h() and show_csv() also strip control
+	  characters from filenames before output.
+	  Reported by Dan Lenz.
+	* Added Sonar output format (--sonar). Thanks to Patschkowski.
+	* Updated CWE list delimiters.
+	* Added missing CWEs to FF1057 warning text.
+	* Removed duplicate word in help text.
+	* Fixed missing closing </li> tags in HTML output.
+	* Fixed typos in documentation.
+
 2021-08-29 David A. Wheeler
 	* Version 2.0.19
 	* Fix so we send error messages to stderr instead of stdout.
