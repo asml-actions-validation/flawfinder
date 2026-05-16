@@ -536,13 +536,23 @@ def load_patch_info(input_patch_file):
     return patch
 
 
+_UNSAFE_CTRL = re.compile(r'[\x00-\x1f\x7f-\x9f]')
+
+
+def strip_controls(s):
+    # Replace control characters with visible \xNN escapes to prevent
+    # terminal injection via crafted filenames.
+    return _UNSAFE_CTRL.sub(lambda m: "\\x%02x" % ord(m.group(0)), s)
+
+
 def htmlize(s):
     # Take s, and return legal (UTF-8) HTML.
     return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
 
 def h(s):
-    # htmlize s if we're generating html, otherwise just return s.
+    # Strip control characters (defense in depth), then htmlize if generating HTML.
+    s = strip_controls(s)
     return htmlize(s) if output_format else s
 
 
@@ -661,7 +671,7 @@ class Hit(object):
     # Show as CSV format
     def show_csv(self):
         csv_writer.writerow([
-            self.filename, self.line, self.column, self.defaultlevel, self.level, self.category,
+            strip_controls(self.filename), self.line, self.column, self.defaultlevel, self.level, self.category,
             self.name, self.warning + ".", self.suggestion + "." if self.suggestion else "", self.note,
             self.cwes(), self.context_text, self.fingerprint(),
             version, self.ruleid, self.helpuri()
@@ -1796,7 +1806,7 @@ def process_c_file(f, patch_infos):
             if output_format:
                 print("Skipping unpatched file ", h(f), "<br>")
             else:
-                print("Skipping unpatched file", f)
+                print("Skipping unpatched file", h(f))
             sys.stdout.flush()
         return
 
@@ -1826,7 +1836,7 @@ def process_c_file(f, patch_infos):
         if output_format:
             print("Examining", h(f), "<br>")
         else:
-            print("Examining", f)
+            print("Examining", h(f))
         sys.stdout.flush()
 
     # Python3 is often configured to use only UTF-8, and presumes
@@ -2093,6 +2103,12 @@ def maybe_process_file(f, patch_infos):
     # has a known C/C++ filename extension.  If it doesn't, we ignore the file.
     # We accept symlinks only if allowlink is true.
     global num_links_skipped, num_dotdirs_skipped
+    if _UNSAFE_CTRL.search(f):
+        # A filename with control characters is almost certainly an attack
+        # (e.g. ANSI escape sequences crafted to forge a clean-scan result).
+        # Use repr() for the warning so the bad bytes can't affect the terminal.
+        print_warning("Skipping file with control characters in filename: " + repr(f))
+        return
     if os.path.isdir(f):
         if (not allowlink) and os.path.islink(f):
             if not quiet:
@@ -2147,6 +2163,9 @@ def process_file_args(files, patch_infos):
     # and skip the rest to prevent security problems. "-" is stdin.
     global num_links_skipped
     for f in files:
+        if _UNSAFE_CTRL.search(f):
+            print_warning("Skipping file with control characters in filename: " + repr(f))
+            continue
         if (not allowlink) and os.path.islink(f):
             if not quiet:
                 print_warning("Skipping symbolic link " + h(f))
