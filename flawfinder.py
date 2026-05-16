@@ -653,7 +653,7 @@ class Hit(object):
     def helpuri(self):
         if self.cwes() == '':
             return 'https://dwheeler.com/flawfinder#{}'.format(self.ruleid)
-        cwe = re.split(',|!', self.cwes())[0] + ")"
+        cwe = re.split('[,!/]', self.cwes())[0] + ")"
         return link_cwe_pattern.sub(
                 r'https://cwe.mitre.org/data/definitions/\2.html',
                 cwe)
