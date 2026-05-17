@@ -139,15 +139,16 @@ class SonarLogger(object):  # Python 2 compat: explicit new-style class
         self._hitlist = hits
 
     def output_sonar(self):
-        str  = '<?xml version="1.0" encoding="UTF-8"?>\n'
-        str += '<results>\n'
+        result  = '<?xml version="1.0" encoding="UTF-8"?>\n'
+        result += '<results>\n'
         for hit in self._hitlist:
             file = os.path.realpath(hit.filename)
             msg  = quoteattr(hit.warning)
-            str += '\t<error id="flawfinder.%s" file="%s" line="%s" column="%s" msg=%s />\n' % \
-                (hit.name, file, hit.line, hit.column, msg)
-        str += '</results>'
-        return str
+            result += '\t<error id=%s file=%s line=%s column=%s msg=%s />\n' % \
+                (quoteattr("flawfinder." + hit.name), quoteattr(file),
+                 quoteattr(str(hit.line)), quoteattr(str(hit.column)), msg)
+        result += '</results>'
+        return result
 
 class SonarRulesLogger(object):  # Python 2 compat: explicit new-style class
     _ruleset = None
@@ -631,8 +632,10 @@ class Hit(object):  # Python 2 compat: explicit new-style class
         self.line = 0
         self.name = ""
         self.context_text = ""
+        _allowed_keys = {'check_for_null', 'extract_lookahead', 'format_position', 'input'}
         for key in other:
-            setattr(self, key, other[key])
+            if key in _allowed_keys:
+                setattr(self, key, other[key])
 
     def __getitem__(self, X):  # Define this so this works: "%(line)" % hit
         return getattr(self, X)
@@ -671,9 +674,12 @@ class Hit(object):  # Python 2 compat: explicit new-style class
     # Show as CSV format
     def show_csv(self):
         csv_writer.writerow([
-            strip_controls(self.filename), self.line, self.column, self.defaultlevel, self.level, self.category,
-            self.name, self.warning + ".", self.suggestion + "." if self.suggestion else "", self.note,
-            self.cwes(), self.context_text, self.fingerprint(),
+            strip_controls(self.filename), self.line, self.column, self.defaultlevel, self.level,
+            strip_controls(str(self.category)),
+            strip_controls(self.name), strip_controls(self.warning) + ".",
+            strip_controls(self.suggestion) + "." if self.suggestion else "",
+            strip_controls(self.note),
+            self.cwes(), strip_controls(self.context_text), self.fingerprint(),
             version, self.ruleid, self.helpuri()
         ])
 
@@ -697,10 +703,10 @@ class Hit(object):  # Python 2 compat: explicit new-style class
         if output_format:
             print(" <b>", end='')
         # Extra space before risk level in text, makes it easier to find:
-        print("  [%(level)s]" % self, end=' ')
+        print("  [%s]" % strip_controls(str(self.level)), end=' ')
         if output_format:
             print("</b> ", end='')
-        print("(%(category)s)" % self, end=' ')
+        print("(%s)" % strip_controls(str(self.category)), end=' ')
         if output_format:
             print("<i> ", end='')
         print(h("%(name)s:" % self), end='')

@@ -1,10 +1,10 @@
 #!/bin/sh -l
-# $1 whitespace-separated arguments. Some filenames may need to be escaped.
-# $2 output filename
+# All positional arguments are passed directly to flawfinder.
+# Output filename is read from FLAWFINDER_OUTPUT env var.
 
-output="${2:-flawfinder-output.txt}"
+output="${FLAWFINDER_OUTPUT:-flawfinder-output.txt}"
 
-flawfinder $1 > "$output"
+flawfinder "$@" > "$output"
 result="$?"
 
 cat "$output"
