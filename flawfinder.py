@@ -1153,6 +1153,10 @@ def cpp_unsafe_stl(hit):
     # Use one of the overloaded classes from the STL in C++14 and higher
     # instead of the <C++14 versions of these functions that did not
     # if the second iterator could overflow
+    if not hit.parameters:
+        # No '(' found after the name: this is an identifier (e.g. an enum
+        # member), not a function call.  Don't warn.
+        return
     if len(hit.parameters) <= 4:
         add_warning(hit)
 
