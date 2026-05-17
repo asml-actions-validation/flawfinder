@@ -652,7 +652,8 @@ class Hit(object):  # Python 2 compat: explicit new-style class
         self.end = None
         self.parameters = None
         self.lookahead = None  # set only when extract_lookahead is true
-        _allowed_keys = {'check_for_null', 'extract_lookahead', 'format_position', 'input'}
+        _allowed_keys = {'check_for_null', 'extract_lookahead',
+                         'format_position', 'input', 'source_position'}
         for key in other:
             if key in _allowed_keys:
                 setattr(self, key, other[key])
@@ -1359,11 +1360,18 @@ c_ruleset = {
      "Use fgets() instead", "buffer", "", {'input': 1}, "FF1014"),
 
     # The "sprintf" hook will raise "format" issues instead if appropriate:
-    "sprintf|vsprintf|swprintf|vswprintf|_stprintf|_vstprintf":
+    "sprintf|vsprintf|_stprintf|_vstprintf":
     (c_sprintf, 4,
      "Does not check for buffer overflows (CWE-120)",
      "Use sprintf_s, snprintf, or vsnprintf",
      "buffer", "", {}, "FF1015"),
+
+    # swprintf/vswprintf take (buf, n, format, ...) so format is at position 3.
+    "swprintf|vswprintf":
+    (c_sprintf, 4,
+     "Does not check for buffer overflows (CWE-120)",
+     "Use sprintf_s, snprintf, or vsnprintf",
+     "buffer", "", {'source_position': 3}, "FF1015"),
 
     "printf|vprintf|vwprintf|vfwprintf|_vtprintf|wprintf":
     (c_printf, 4,
