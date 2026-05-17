@@ -362,7 +362,12 @@ class SarifLogger(object):  # Python 2 compat: explicit new-style class
 
     @staticmethod
     def _to_uri_path(path):
-        return url_quote(path.replace("\\", "/"), safe='/')
+        p = path.replace("\\", "/")
+        while p.startswith("./"):
+            p = p[2:]
+        if p.startswith("-"):
+            p = "./" + p  # prevent misinterpretation as a CLI option
+        return url_quote(p, safe='/')
 
     @staticmethod
     def _append_period(text):
@@ -647,7 +652,8 @@ class Hit(object):  # Python 2 compat: explicit new-style class
         self.end = None
         self.parameters = None
         self.lookahead = None  # set only when extract_lookahead is true
-        _allowed_keys = {'check_for_null', 'extract_lookahead', 'format_position', 'input'}
+        _allowed_keys = {'check_for_null', 'extract_lookahead',
+                         'format_position', 'input', 'source_position'}
         for key in other:
             if key in _allowed_keys:
                 setattr(self, key, other[key])
@@ -1354,11 +1360,18 @@ c_ruleset = {
      "Use fgets() instead", "buffer", "", {'input': 1}, "FF1014"),
 
     # The "sprintf" hook will raise "format" issues instead if appropriate:
-    "sprintf|vsprintf|swprintf|vswprintf|_stprintf|_vstprintf":
+    "sprintf|vsprintf|_stprintf|_vstprintf":
     (c_sprintf, 4,
      "Does not check for buffer overflows (CWE-120)",
      "Use sprintf_s, snprintf, or vsnprintf",
      "buffer", "", {}, "FF1015"),
+
+    # swprintf/vswprintf take (buf, n, format, ...) so format is at position 3.
+    "swprintf|vswprintf":
+    (c_sprintf, 4,
+     "Does not check for buffer overflows (CWE-120)",
+     "Use sprintf_s, snprintf, or vsnprintf",
+     "buffer", "", {'source_position': 3}, "FF1015"),
 
     "printf|vprintf|vwprintf|vfwprintf|_vtprintf|wprintf":
     (c_printf, 4,
@@ -1881,6 +1894,33 @@ def _preceded_by_member_or_namespace(text, startpos):
     return False
 
 
+def _skip_attribute_args(text, pos):
+    """Advance past the ((...)) argument of __attribute__, tracking paren depth.
+
+    Returns the position after the closing paren, or pos unchanged if no
+    opening paren is found (malformed or no argument).
+    """
+    n = len(text)
+    while pos < n and text[pos] in ' \t\n\r':
+        pos += 1
+    if pos >= n or text[pos] != '(':
+        return pos
+    # Limitation: paren counting ignores string literals, so an unbalanced
+    # '(' inside a string argument (e.g. deprecated("old open( call")) will
+    # cause the scanner to skip the rest of the file.  This is accepted as a
+    # known edge case; attribute strings with unbalanced parens are very rare.
+    depth = 0
+    while pos < n:
+        if text[pos] == '(':
+            depth += 1
+        elif text[pos] == ')':
+            depth -= 1
+            if depth == 0:
+                return pos + 1
+        pos += 1
+    return pos
+
+
 def process_directive():
     "Given a directive, process it."
     global ignoreline, num_ignored_hits
@@ -2102,7 +2142,9 @@ def process_c_file(f, patch_infos):
                     i = endpos
                     word = text[startpos:endpos]
                     # print "Word is:", text[startpos:endpos]
-                    if (word in c_ruleset) and \
+                    if word == "__attribute__":
+                        i = _skip_attribute_args(text, endpos)
+                    elif (word in c_ruleset) and \
                        not _preceded_by_member_or_namespace(text, startpos) and \
                        c_valid_match(text, endpos):
                         if ((patch_infos is None)

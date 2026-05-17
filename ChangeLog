@@ -58,6 +58,50 @@
 	* Removed duplicate word in help text.
 	* Fixed missing closing </li> tags in HTML output.
 	* Fixed typos in documentation.
+	* Fix false positives for method and member calls. Functions like
+	  read(), system(), or StrCat() are no longer flagged when preceded
+	  by "." or "->", e.g. stream.read(), obj.system(), ptr->read().
+	  Global calls and explicit global-scope calls (::system()) are still
+	  flagged. Fixes https://github.com/david-a-wheeler/flawfinder/issues/87
+	  https://github.com/david-a-wheeler/flawfinder/issues/83
+	  https://github.com/david-a-wheeler/flawfinder/issues/82
+	  https://github.com/david-a-wheeler/flawfinder/issues/76
+	  https://github.com/david-a-wheeler/flawfinder/issues/59
+	* Warn and skip files with encoding errors instead of aborting the
+	  entire scan. A count of skipped files is reported at the end and
+	  flawfinder exits with code 15 if any were skipped. The new
+	  --error-on-encoding flag restores the old abort-on-first-error
+	  behavior for strict pipelines.
+	  Fixes https://github.com/david-a-wheeler/flawfinder/issues/80
+	  https://github.com/david-a-wheeler/flawfinder/issues/68
+	* Fix SARIF output to produce valid URIs and helpUri values.
+	  File paths are now percent-encoded so spaces and special characters
+	  don't produce malformed URIs. Leading "./" prefixes are stripped so
+	  paths work correctly with the uriBaseId/SRCROOT placeholder (paths
+	  beginning with "-" retain "./" to avoid misinterpretation as CLI
+	  options). The helpUri field now reliably resolves to a CWE URL or
+	  falls back to a flawfinder rule URL; previously it could produce
+	  invalid values like ")".
+	  Fixes https://github.com/david-a-wheeler/flawfinder/issues/78
+	  https://github.com/david-a-wheeler/flawfinder/issues/67
+	  https://github.com/david-a-wheeler/flawfinder/issues/66
+	* Fix swprintf/vswprintf format-string detection. These functions take
+	  (buf, n, format, ...) so the format string is at position 3, not 2.
+	  Previously flawfinder inspected the size argument n instead, causing
+	  false positives on constant formats and missing non-constant ones.
+	  Fixes https://github.com/david-a-wheeler/flawfinder/issues/43
+	* Fix false positive: function names inside __attribute__((...)) are
+	  compiler metadata, not callable expressions,
+	  and are no longer flagged.
+	  E.g., __attribute__((format(printf, 1, 2))) no longer triggers a
+	  format-string warning.
+	  Fixes https://github.com/david-a-wheeler/flawfinder/issues/27
+	* Add --exclude PATTERN option (repeatable) to skip files or
+	  directories whose full path matches a glob pattern, e.g.
+	  --exclude '*/third_party/*'. Useful for ignoring generated code,
+	  vendored libraries, or test directories.
+	  Fixes https://github.com/david-a-wheeler/flawfinder/issues/89
+	  https://github.com/david-a-wheeler/flawfinder/issues/65
 
 2021-08-29 David A. Wheeler
 	* Version 2.0.19

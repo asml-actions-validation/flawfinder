@@ -97,6 +97,14 @@ test_013: $(FLAWFINDER) test-member-calls.cpp
 	  test-member-calls.cpp > test-results-013.txt
 	@diff -u correct-results-013.txt test-results-013.txt
 
+test_014: $(FLAWFINDER) test-attribute.c
+	@echo 'test_014 (__attribute__((format(printf,...))) not flagged; real calls still flagged)'
+# printf inside __attribute__((...)) is a specifier keyword, not a call;
+# must produce no hit. Real printf calls outside attributes must still fire.
+	@$(PYTHON) $(FLAWFINDER) --omittime -m0 -DC --quiet \
+	  test-attribute.c > test-results-014.txt
+	@diff -u correct-results-014.txt test-results-014.txt
+
 test_012: $(FLAWFINDER) test-modern-cpp.cpp
 	@echo 'test_012 (modern C++ lexing: binary/hex literals, hex floats, digit separators)'
 # Modern C++ syntax must produce zero hits (no false positives from the lexer).
@@ -109,7 +117,7 @@ test_012: $(FLAWFINDER) test-modern-cpp.cpp
 # If everything works as expected, it just prints test numbers.
 # Set PYTHON as needed, including to ""
 test: test_001 test_002 test_003 test_004 test_005 test_006 test_007 test_008 \
-	  test_009 test_010 test_011 test_012 test_013
+	  test_009 test_010 test_011 test_012 test_013 test_014
 	@echo 'All tests pass!'
 
 check: test
