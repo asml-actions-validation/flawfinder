@@ -132,7 +132,8 @@ def to_json(o):
     return json.dumps(o, default=lambda o: o.__dict__, sort_keys=False, indent=2)
 
 
-class SonarLogger(object):  # Python 2 compat: explicit new-style class  # pylint: disable=too-few-public-methods
+# pylint: disable-next=too-few-public-methods
+class SonarLogger(object):  # Python 2 compat: explicit new-style class
     _hitlist = None
 
     def __init__ (self, hits):
@@ -150,7 +151,8 @@ class SonarLogger(object):  # Python 2 compat: explicit new-style class  # pylin
         result += '</results>'
         return result
 
-class SonarRulesLogger(object):  # Python 2 compat: explicit new-style class  # pylint: disable=too-few-public-methods
+# pylint: disable-next=too-few-public-methods
+class SonarRulesLogger(object):  # Python 2 compat: explicit new-style class
     _ruleset = None
 
     def __init__(self, rules):
@@ -199,7 +201,8 @@ class SonarRulesLogger(object):  # Python 2 compat: explicit new-style class  # 
 # We intentionally merge all of flawfinder's functionality into 1 file
 # so it's trivial to copy & use elsewhere.
 
-class SarifLogger(object):  # Python 2 compat: explicit new-style class  # pylint: disable=too-few-public-methods
+# pylint: disable-next=too-few-public-methods
+class SarifLogger(object):  # Python 2 compat: explicit new-style class
     _hitlist = None
     TOOL_NAME = "Flawfinder"
     TOOL_URL = "https://dwheeler.com/flawfinder/"
@@ -469,7 +472,8 @@ def load_patch_info(input_patch_file):
     line_counter = 0
     initial_number = 0
     try:
-        hPatch = open(input_patch_file, 'r')  # pylint: disable=unspecified-encoding
+        # pylint: disable-next=unspecified-encoding,consider-using-with
+        hPatch = open(input_patch_file, 'r')
     except BaseException:
         print("Error: failed to open", h(input_patch_file))
         sys.exit(10)
@@ -1915,7 +1919,8 @@ def process_c_file(f, patch_infos):
             num_links_skipped += 1
             return
         try:
-            my_input = open(f, "r")  # pylint: disable=unspecified-encoding
+            # pylint: disable-next=unspecified-encoding,consider-using-with
+            my_input = open(f, "r")
         except BaseException:
             print("Error: failed to open", h(f))
             sys.exit(14)
