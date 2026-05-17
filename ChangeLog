@@ -85,6 +85,11 @@
 	  Fixes https://github.com/david-a-wheeler/flawfinder/issues/78
 	  https://github.com/david-a-wheeler/flawfinder/issues/67
 	  https://github.com/david-a-wheeler/flawfinder/issues/66
+	* Fix swprintf/vswprintf format-string detection. These functions take
+	  (buf, n, format, ...) so the format string is at position 3, not 2.
+	  Previously flawfinder inspected the size argument n instead, causing
+	  false positives on constant formats and missing non-constant ones.
+	  Fixes https://github.com/david-a-wheeler/flawfinder/issues/43
 	* Fix false positive: function names inside __attribute__((...)) are
 	  compiler metadata, not callable expressions,
 	  and are no longer flagged.
