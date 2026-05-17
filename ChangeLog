@@ -15,6 +15,25 @@
 	  a crafted hitlist file is blocked. A @hook decorator registers each
 	  hook function, and a startup check ensures the allowlist stays in
 	  sync with the ruleset automatically.
+	* Fix false positive: strlen() on a string literal (e.g.,
+	  strlen("foo"), strlen(L"wide"), strlen(u8"utf8")) is always safe
+	  because string literals are guaranteed null-terminated. No warning
+	  is now issued in this case.
+	  Fixes https://sourceforge.net/p/flawfinder/bugs/24/
+	* Fix false positive: equal(), mismatch(), and is_permutation() used
+	  as identifiers (e.g. enum members) rather than function calls no
+	  longer produce spurious warnings.
+	  Fixes https://sourceforge.net/p/flawfinder/bugs/28/
+	* Fix false positive: std::ranges::equal(), std::ranges::mismatch(),
+	  and std::ranges::is_permutation() (C++20) check both range lengths
+	  automatically and are not vulnerable to over-read; they are no
+	  longer flagged.
+	  Fixes https://sourceforge.net/p/flawfinder/bugs/29/
+	* Fix typos in comments (preceeding, posible, theses, levle).
+	  Fixes https://sourceforge.net/p/flawfinder/bugs/27/
+	* Added CI workflow (GitHub Actions) to run the test suite on every
+	  push and pull request.
+	* Updated pylintrc for pylint 4.x compatibility.
 	* Added Sonar output format (--sonar). Thanks to Patschkowski.
 	* Updated CWE list delimiters.
 	* Added missing CWEs to FF1057 warning text.
