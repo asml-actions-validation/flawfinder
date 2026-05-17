@@ -1148,6 +1148,11 @@ def c_static_array(hit):
         add_warning(hit)  # Found a static array, warn about it.
 
 
+# Matches the C++20 ranges:: qualifier immediately before the function name.
+# std::ranges::equal / mismatch / is_permutation check both range lengths
+# automatically and are safe; only the legacy iterator forms are risky.
+p_ranges_prefix = re.compile(r'ranges::\s*(equal|mismatch|is_permutation)\b')
+
 @hook
 def cpp_unsafe_stl(hit):
     # Use one of the overloaded classes from the STL in C++14 and higher
@@ -1156,6 +1161,11 @@ def cpp_unsafe_stl(hit):
     if not hit.parameters:
         # No '(' found after the name: this is an identifier (e.g. an enum
         # member), not a function call.  Don't warn.
+        return
+    # If the call is qualified with ranges:: immediately before the function
+    # name (e.g. std::ranges::equal), it is the C++20 ranges overload which
+    # checks both range lengths and is not vulnerable.
+    if p_ranges_prefix.search(hit.context_text):
         return
     if len(hit.parameters) <= 4:
         add_warning(hit)
