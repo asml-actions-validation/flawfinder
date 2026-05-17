@@ -1886,6 +1886,33 @@ def _preceded_by_member_or_namespace(text, startpos):
     return False
 
 
+def _skip_attribute_args(text, pos):
+    """Advance past the ((...)) argument of __attribute__, tracking paren depth.
+
+    Returns the position after the closing paren, or pos unchanged if no
+    opening paren is found (malformed or no argument).
+    """
+    n = len(text)
+    while pos < n and text[pos] in ' \t\n\r':
+        pos += 1
+    if pos >= n or text[pos] != '(':
+        return pos
+    # Limitation: paren counting ignores string literals, so an unbalanced
+    # '(' inside a string argument (e.g. deprecated("old open( call")) will
+    # cause the scanner to skip the rest of the file.  This is accepted as a
+    # known edge case; attribute strings with unbalanced parens are very rare.
+    depth = 0
+    while pos < n:
+        if text[pos] == '(':
+            depth += 1
+        elif text[pos] == ')':
+            depth -= 1
+            if depth == 0:
+                return pos + 1
+        pos += 1
+    return pos
+
+
 def process_directive():
     "Given a directive, process it."
     global ignoreline, num_ignored_hits
@@ -2107,7 +2134,9 @@ def process_c_file(f, patch_infos):
                     i = endpos
                     word = text[startpos:endpos]
                     # print "Word is:", text[startpos:endpos]
-                    if (word in c_ruleset) and \
+                    if word == "__attribute__":
+                        i = _skip_attribute_args(text, endpos)
+                    elif (word in c_ruleset) and \
                        not _preceded_by_member_or_namespace(text, startpos) and \
                        c_valid_match(text, endpos):
                         if ((patch_infos is None)
