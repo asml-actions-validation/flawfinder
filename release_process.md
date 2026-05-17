@@ -9,14 +9,16 @@ dependencies such as `setuptools` and `twine` are available:
 
 ~~~~
 python3 -m venv venv
-source venv/bin/activate
+source venv/bin/activate   # re-run this in each new shell session
 pip install setuptools twine wheel
 ~~~~
 
 ## Changing version number
 
 Ensure that the version number is the intended final value.
-Make sure every release has a unique version number.
+Make sure every different release has a unique version number,
+and that the number is consistent across all our files for
+a given release.
 
 To change version number, edit the following files:
 makefile
@@ -25,10 +27,12 @@ flawfinder.spec
 setup.py
 index.html # in dwheeler.com/flawfinder
 
-Then run several times:
+Run `make check` until the output stabilises, then accept the new
+expected results:
 
 ~~~~
-make test ; make test-is-correct # update version number in tests
+make check
+make test-is-correct
 ~~~~
 
 ## Test it
@@ -64,8 +68,8 @@ Once you're sure this is the *real* version, tag it:
 
 ~~~~
 git tag VERSION
-git push --tags origin # SourceForge
-git push --tags github # GitHub
+git push --tags sourceforge # SourceForge
+git push --tags origin # (or "github") GitHub
 ~~~~
 
 ## Create tarball
@@ -90,7 +94,9 @@ Do this *before* creating the PyPi distribution package for pip.
 ## Post to pip
 
 First, ensure the packaging tools are installed (see venv setup above).
-On Cygwin you may also need:
+
+On Windows (Cygwin), pip may not be available yet and
+must be bootstrapped first:
 
 ~~~~
 python -m ensurepip
