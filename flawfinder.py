@@ -55,6 +55,10 @@ import time
 import csv  # To support generating CSV format
 import hashlib
 import json
+try:
+    from urllib import quote as url_quote      # Python 2
+except ImportError:
+    from urllib.parse import quote as url_quote  # Python 3
 
 version = "2.0.20"
 
@@ -356,7 +360,7 @@ class SarifLogger(object):  # Python 2 compat: explicit new-style class
 
     @staticmethod
     def _to_uri_path(path):
-        return path.replace("\\", "/")
+        return url_quote(path.replace("\\", "/"), safe='/')
 
     @staticmethod
     def _append_period(text):
@@ -673,12 +677,14 @@ class Hit(object):  # Python 2 compat: explicit new-style class
     # Help uri for each defined rule. e.g. "https://dwheeler.com/flawfinder#FF1002"
     # return first CWE link for now
     def helpuri(self):
-        if self.cwes() == '':
+        raw_cwes = self.cwes()
+        if not raw_cwes:
             return 'https://dwheeler.com/flawfinder#{}'.format(self.ruleid)
-        cwe = re.split('[,!/]', self.cwes())[0] + ")"
-        return link_cwe_pattern.sub(
-                r'https://cwe.mitre.org/data/definitions/\2.html',
-                cwe)
+        first_cwe = re.search(r'CWE-(\d+)', raw_cwes)
+        if first_cwe:
+            return 'https://cwe.mitre.org/data/definitions/{}.html'.format(
+                first_cwe.group(1))
+        return 'https://dwheeler.com/flawfinder#{}'.format(self.ruleid)
 
     # Show as CSV format
     def show_csv(self):
