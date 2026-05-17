@@ -369,7 +369,7 @@ class SarifLogger(object):  # Python 2 compat: explicit new-style class
 #    --- OLDFILENAME OLDTIMESTAMP
 #    +++ NEWFILENAME NEWTIMESTAMP
 #    @@ -OLDSTART,OLDLENGTH +NEWSTART,NEWLENGTH @@
-#    ... Changes where preceeding "+" is add, "-" is remove, " " is unchanged.
+#    ... Changes where preceding "+" is add, "-" is remove, " " is unchanged.
 #
 #    ",OLDLENGTH" and ",NEWLENGTH" are optional  (they default to 1).
 #    GNU unified diff format doesn't normally output "Index:"; you use
@@ -882,7 +882,7 @@ def extract_c_parameters(text, pos=0):
 # so will get confused by patterns like  gettext("hi") + function("bye")
 # In practice, this doesn't seem to be a problem; gettext() is usually
 # wrapped around the entire parameter.
-# The ?s makes it posible to match multi-line strings.
+# The ?s makes it possible to match multi-line strings.
 # pylint: disable=implicit-str-concat
 gettext_pattern = re.compile(r'(?s)^\s*' 'gettext' r'\s*\((.*)\)\s*$')
 undersc_pattern = re.compile(r'(?s)^\s*' '_(T(EXT)?)?' r'\s*\((.*)\)\s*$')
@@ -1151,7 +1151,7 @@ def c_static_array(hit):
 @hook
 def cpp_unsafe_stl(hit):
     # Use one of the overloaded classes from the STL in C++14 and higher
-    # instead of the <C++14 versions of theses functions that did not
+    # instead of the <C++14 versions of these functions that did not
     # if the second iterator could overflow
     if len(hit.parameters) <= 4:
         add_warning(hit)
@@ -1272,7 +1272,7 @@ c_ruleset = {
     "lstrcpyn|wcsncpy|_tcsncpy|_mbsnbcpy":
     (c_buffer,
      1,  # Low risk level, because this is often used correctly when FIXING security
-     # problems, and raising it to a higher risk levle would cause many false
+     # problems, and raising it to a higher risk level would cause many false
      # positives.
      "Easily used incorrectly; doesn't always \\0-terminate or "
      "check for invalid pointers [MS-banned] (CWE-120)",
