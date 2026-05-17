@@ -1,16 +1,22 @@
 2026-05-16 David A. Wheeler
+	* Version 2.0.19
+	  Fix unlikely vulnerabilities (involving malicious filenames/text
+	  in analyzed systems) and implement various improvements
 	* Fix security vulnerabilities found by Gemini:
-	  - Shell injection in entrypoint.sh: quoted args with "$@" and moved
-	    output filename to FLAWFINDER_OUTPUT env var in action.yml.
+	  - Terminal injection in standard output: apply strip_controls() to
+	    level and category in show().
 	  - Terminal injection in CSV output: apply strip_controls() to all
 	    untrusted fields in show_csv() (category, name, warning,
 	    suggestion, note, context_text).
 	  - XML injection in SonarQube output: use quoteattr() for all XML
 	    attributes in output_sonar().
-	  - Terminal injection in standard output: apply strip_controls() to
-	    level and category in show().
 	  - Defense-in-depth: restrict setattr in Hit.__init__ to an allowlist
-	    of known keys used by rule definitions.
+	    of known keys used by rule definitions, countering pickle attacks.
+	    We previously warned to not load untrusted pickle files, but
+	    completely preventing attacks is better.
+	  - Shell injection in CI/CD file entrypoint.sh:
+	    quoted args with "$@" and moved output filename to
+	    FLAWFINDER_OUTPUT env var in action.yml.
 	* Fix terminal injection vulnerability via crafted filenames.
 	  A malicious file whose name contained ANSI escape sequences
 	  (e.g. ESC[2K CR ESC[32m[OK]...) could cause flawfinder's
