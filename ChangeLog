@@ -1,4 +1,16 @@
 2026-05-16 David A. Wheeler
+	* Fix security vulnerabilities found by Gemini:
+	  - Shell injection in entrypoint.sh: quoted args with "$@" and moved
+	    output filename to FLAWFINDER_OUTPUT env var in action.yml.
+	  - Terminal injection in CSV output: apply strip_controls() to all
+	    untrusted fields in show_csv() (category, name, warning,
+	    suggestion, note, context_text).
+	  - XML injection in SonarQube output: use quoteattr() for all XML
+	    attributes in output_sonar().
+	  - Terminal injection in standard output: apply strip_controls() to
+	    level and category in show().
+	  - Defense-in-depth: restrict setattr in Hit.__init__ to an allowlist
+	    of known keys used by rule definitions.
 	* Fix terminal injection vulnerability via crafted filenames.
 	  A malicious file whose name contained ANSI escape sequences
 	  (e.g. ESC[2K CR ESC[32m[OK]...) could cause flawfinder's
@@ -7,7 +19,7 @@
 	  control characters are now rejected with a warning.
 	  As defense in depth, h() and show_csv() also strip control
 	  characters from filenames before output.
-	  Reported by Dan Lenz.
+	  Reported by Dan Lenz (thank you!!).
 	* Reject malicious pickles on hitlist load. Hitlists (--loadhitlist,
 	  --diffhitlist) are now loaded via SafeUnpickler, a restricted
 	  unpickler that only allows the specific classes and hook functions
