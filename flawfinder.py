@@ -132,7 +132,7 @@ def to_json(o):
     return json.dumps(o, default=lambda o: o.__dict__, sort_keys=False, indent=2)
 
 
-class SonarLogger(object):  # Python 2 compat: explicit new-style class
+class SonarLogger(object):  # Python 2 compat: explicit new-style class  # pylint: disable=too-few-public-methods
     _hitlist = None
 
     def __init__ (self, hits):
@@ -150,7 +150,7 @@ class SonarLogger(object):  # Python 2 compat: explicit new-style class
         result += '</results>'
         return result
 
-class SonarRulesLogger(object):  # Python 2 compat: explicit new-style class
+class SonarRulesLogger(object):  # Python 2 compat: explicit new-style class  # pylint: disable=too-few-public-methods
     _ruleset = None
 
     def __init__(self, rules):
@@ -173,33 +173,33 @@ class SonarRulesLogger(object):  # Python 2 compat: explicit new-style class
             'tmpfile':  'Temporary file vulnerability using function "%s"',
             'free':     'Avoid usage of function "%s"'
         }
-        str  = '<?xml version="1.0" encoding="UTF-8"?>\n'
-        str += '<rules>\n'
+        result  = '<?xml version="1.0" encoding="UTF-8"?>\n'
+        result += '<rules>\n'
         for key in self._ruleset.keys():
             name = RULE_NAMES[self._ruleset[key][4]] % (key)
-            str += '\t<rule>\n'
-            str += '\t\t<key>flawfinder.%s</key>\n' % (key)
-            str += '\t\t<name>%s</name>\n' % (name)
-            str += '\t\t<description><![CDATA[%s.' % (self._ruleset[key][2])
+            result += '\t<rule>\n'
+            result += '\t\t<key>flawfinder.%s</key>\n' % (key)
+            result += '\t\t<name>%s</name>\n' % (name)
+            result += '\t\t<description><![CDATA[%s.' % (self._ruleset[key][2])
             if self._ruleset[key][3] != '':
-                str += ' %s' % (self._ruleset[key][3])
-            str += ']]></description>\n'
-            str += '\t\t<internalKey>flawfinder/%s</internalKey>\n' % (key)
-            str += '\t\t<severity>%s</severity>\n' % (SONAR_SEVERITIES[self._ruleset[key][1]])
-            str += '\t\t<type>VULNERABILITY</type>\n'
-            str += '\t\t<tag>cwe</tag>\n'
-            str += '\t\t<tag>flawfinder</tag>\n'
-            str += '\t\t<remediationFunction>CONSTANT_ISSUE</remediationFunction>\n'
-            str += '\t\t<remediationFunctionBaseEffort>2min</remediationFunctionBaseEffort>\n'
-            str += '\t</rule>\n'
-        str += '</rules>'
-        return str
+                result += ' %s' % (self._ruleset[key][3])
+            result += ']]></description>\n'
+            result += '\t\t<internalKey>flawfinder/%s</internalKey>\n' % (key)
+            result += '\t\t<severity>%s</severity>\n' % (SONAR_SEVERITIES[self._ruleset[key][1]])
+            result += '\t\t<type>VULNERABILITY</type>\n'
+            result += '\t\t<tag>cwe</tag>\n'
+            result += '\t\t<tag>flawfinder</tag>\n'
+            result += '\t\t<remediationFunction>CONSTANT_ISSUE</remediationFunction>\n'
+            result += '\t\t<remediationFunctionBaseEffort>2min</remediationFunctionBaseEffort>\n'
+            result += '\t</rule>\n'
+        result += '</rules>'
+        return result
 
 # The following implements the SarifLogger.
 # We intentionally merge all of flawfinder's functionality into 1 file
 # so it's trivial to copy & use elsewhere.
 
-class SarifLogger(object):  # Python 2 compat: explicit new-style class
+class SarifLogger(object):  # Python 2 compat: explicit new-style class  # pylint: disable=too-few-public-methods
     _hitlist = None
     TOOL_NAME = "Flawfinder"
     TOOL_URL = "https://dwheeler.com/flawfinder/"
@@ -251,16 +251,16 @@ class SarifLogger(object):  # Python 2 compat: explicit new-style class
         jsonstr = to_json(report)
         return jsonstr
 
-    def _extract_rules(self, hitlist):
+    def _extract_rules(self, hits):
         rules = {}
-        for hit in hitlist:
+        for hit in hits:
             if not hit.ruleid in rules:
                 rules[hit.ruleid] = self._to_sarif_rule(hit)
         return list(rules.values())
 
-    def _extract_results(self, hitlist):
+    def _extract_results(self, hits):
         results = []
-        for hit in hitlist:
+        for hit in hits:
             results.append(self._to_sarif_result(hit))
         return results
 
@@ -469,7 +469,7 @@ def load_patch_info(input_patch_file):
     line_counter = 0
     initial_number = 0
     try:
-        hPatch = open(input_patch_file, 'r')
+        hPatch = open(input_patch_file, 'r')  # pylint: disable=unspecified-encoding
     except BaseException:
         print("Error: failed to open", h(input_patch_file))
         sys.exit(10)
@@ -621,8 +621,8 @@ class Hit(object):  # Python 2 compat: explicit new-style class
     extract_lookahead = 0  # Normally don't extract lookahead.
 
     def __init__(self, data):
-        hook, level, warning, suggestion, category, url, other, ruleid = data
-        self.hook, self.level, self.defaultlevel = hook, level, level
+        fn, level, warning, suggestion, category, url, other, ruleid = data
+        self.hook, self.level, self.defaultlevel = fn, level, level
         self.warning, self.suggestion = warning, suggestion
         self.category, self.url = category, url
         self.ruleid = ruleid
@@ -632,6 +632,10 @@ class Hit(object):  # Python 2 compat: explicit new-style class
         self.line = 0
         self.name = ""
         self.context_text = ""
+        self.start = None
+        self.end = None
+        self.parameters = None
+        self.lookahead = None  # set only when extract_lookahead is true
         _allowed_keys = {'check_for_null', 'extract_lookahead', 'format_position', 'input'}
         for key in other:
             if key in _allowed_keys:
@@ -1911,7 +1915,7 @@ def process_c_file(f, patch_infos):
             num_links_skipped += 1
             return
         try:
-            my_input = open(f, "r")
+            my_input = open(f, "r")  # pylint: disable=unspecified-encoding
         except BaseException:
             print("Error: failed to open", h(f))
             sys.exit(14)
@@ -2546,8 +2550,8 @@ def process_files():
     """Process input (files or hitlist); return True if okay."""
     global hitlist
     if loadhitlist:
-        f = open(loadhitlist, "rb")
-        hitlist = SafeUnpickler(f).load()
+        with open(loadhitlist, "rb") as f:
+            hitlist = SafeUnpickler(f).load()
         return True
     patch_infos = None
     if patch_file != "":
@@ -2591,8 +2595,8 @@ def show_final_results():
     # the risk levels or line numbers.
     diff_hitlist = []
     if diffhitlist_filename:
-        diff_file = open(diffhitlist_filename, 'rb')
-        diff_hitlist = SafeUnpickler(diff_file).load()
+        with open(diffhitlist_filename, 'rb') as diff_file:
+            diff_hitlist = SafeUnpickler(diff_file).load()
     if output_format:
         print("<ul>")
     for hit in hitlist:
@@ -2718,9 +2722,8 @@ def save_if_desired():
     if savehitlist:
         if not quiet:
             print("Saving hitlist to", savehitlist)
-        f = open(savehitlist, "wb")
-        pickle.dump(hitlist, f)
-        f.close()
+        with open(savehitlist, "wb") as f:
+            pickle.dump(hitlist, f)
 
 
 def flawfind():
