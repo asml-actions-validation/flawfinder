@@ -55,6 +55,11 @@ import time
 import csv  # To support generating CSV format
 import hashlib
 import json
+import fnmatch
+try:
+    from urllib import quote as url_quote      # Python 2
+except ImportError:
+    from urllib.parse import quote as url_quote  # Python 3
 
 version = "2.0.20"
 
@@ -100,6 +105,8 @@ error_level_exceeded = False
 
 displayed_header = 0  # Have we displayed the header yet?
 num_ignored_hits = 0  # Number of ignored hits (used if never_ignore==0)
+num_encoding_errors = 0  # Number of files skipped due to encoding errors.
+exclude_patterns = []  # Patterns passed to --exclude
 
 
 def error(message):
@@ -355,7 +362,7 @@ class SarifLogger(object):  # Python 2 compat: explicit new-style class
 
     @staticmethod
     def _to_uri_path(path):
-        return path.replace("\\", "/")
+        return url_quote(path.replace("\\", "/"), safe='/')
 
     @staticmethod
     def _append_period(text):
@@ -672,12 +679,14 @@ class Hit(object):  # Python 2 compat: explicit new-style class
     # Help uri for each defined rule. e.g. "https://dwheeler.com/flawfinder#FF1002"
     # return first CWE link for now
     def helpuri(self):
-        if self.cwes() == '':
+        raw_cwes = self.cwes()
+        if not raw_cwes:
             return 'https://dwheeler.com/flawfinder#{}'.format(self.ruleid)
-        cwe = re.split('[,!/]', self.cwes())[0] + ")"
-        return link_cwe_pattern.sub(
-                r'https://cwe.mitre.org/data/definitions/\2.html',
-                cwe)
+        first_cwe = re.search(r'CWE-(\d+)', raw_cwes)
+        if first_cwe:
+            return 'https://cwe.mitre.org/data/definitions/{}.html'.format(
+                first_cwe.group(1))
+        return 'https://dwheeler.com/flawfinder#{}'.format(self.ruleid)
 
     # Show as CSV format
     def show_csv(self):
@@ -1843,6 +1852,35 @@ def c_valid_match(text, position):
     return 0  # Never found anything other than "(" and whitespace.
 
 
+def _preceded_by_member_or_namespace(text, startpos):
+    """Return True if the word at startpos is a member call via '.' or '->'.
+
+    Suppresses false positives on method calls such as obj.read() and
+    ptr->read() where a dangerous function name is used as a method, not
+    as the global C function.
+
+    Namespace-qualified calls (ns::func) are intentionally NOT suppressed
+    here: some namespace-qualified calls are still dangerous (e.g.
+    std::equal with three iterators), so that decision is left to the
+    individual rule hooks.
+
+    Only horizontal whitespace (space, tab) is skipped; newlines are
+    treated as boundaries.
+    """
+    j = startpos - 1
+    while j >= 0 and text[j] in ' \t':
+        j -= 1
+    if j < 0:
+        return False
+    # obj.func()
+    if text[j] == '.':
+        return True
+    # ptr->func()
+    if j >= 1 and text[j-1:j+1] == '->':
+        return True
+    return False
+
+
 def process_directive():
     "Given a directive, process it."
     global ignoreline, num_ignored_hits
@@ -1897,8 +1935,10 @@ def process_c_file(f, patch_infos):
     linenumber = 1
     ignoreline = -1
 
-    cpplanguage = (f.endswith(".cpp") or f.endswith(".cxx") or f.endswith(".cc")
-                   or f.endswith(".hpp"))
+    # This may be needed for future C++-specific rules, so set it.
+    # pylint: disable=unused-variable
+    cpplanguage = (f.endswith(".cpp") or f.endswith(".cxx") or
+                   f.endswith(".cc") or f.endswith(".hpp"))
     incomment = 0
     instring = 0
     linebegin = 1
@@ -1951,7 +1991,9 @@ def process_c_file(f, patch_infos):
     try:
         text = "".join(my_input.readlines())
     except UnicodeDecodeError as err:
-        print('Error: encoding error in', h(f))
+        global num_encoding_errors
+        num_encoding_errors += 1
+        print('Warning: encoding error in', h(f), '-- skipping file.')
         print(err)
         print()
         print('Python3 requires input character data to be perfectly encoded;')
@@ -1976,7 +2018,7 @@ def process_c_file(f, patch_infos):
         print('Some of these options may not work depending on circumstance.')
         print('In the long term, we recommend using UTF-8 for source code.')
         print('For more information, see the documentation.')
-        sys.exit(15)
+        return
 
     i = 0
     while i < len(text):
@@ -2060,7 +2102,9 @@ def process_c_file(f, patch_infos):
                     i = endpos
                     word = text[startpos:endpos]
                     # print "Word is:", text[startpos:endpos]
-                    if (word in c_ruleset) and c_valid_match(text, endpos):
+                    if (word in c_ruleset) and \
+                       not _preceded_by_member_or_namespace(text, startpos) and \
+                       c_valid_match(text, endpos):
                         if ((patch_infos is None)
                                 or ((patch_infos is not None) and
                                     (linenumber in patch_infos[f]))):
@@ -2206,6 +2250,10 @@ c_extensions = {
 }
 
 
+def is_excluded(path):
+    return any(fnmatch.fnmatch(path, pat) for pat in exclude_patterns)
+
+
 def maybe_process_file(f, patch_infos):
     # process f, but only if (1) it's a directory (so we recurse), or
     # (2) it's source code in a language we can handle.
@@ -2232,6 +2280,8 @@ def maybe_process_file(f, patch_infos):
                 print_warning("Skipping directory with initial dot " + h(f))
             num_dotdirs_skipped += 1
             return
+        if is_excluded(f):
+            return
         for dir_entry in os.listdir(f):
             maybe_process_file(os.path.join(f, dir_entry), patch_infos)
     # Now we will FIRST check if the file appears to be a C/C++ file, and
@@ -2252,6 +2302,8 @@ def maybe_process_file(f, patch_infos):
                 # device files, etc. won't cause trouble.
                 if not quiet:
                     print_warning("Skipping non-regular file " + h(f))
+            elif is_excluded(f):
+                pass
             else:
                 # We want to know the difference only with files found in the
                 # patch.
@@ -2327,6 +2379,7 @@ def usage():
     print("""
 flawfinder [--help | -h] [--version] [--listrules]
   [--allowlink] [--followdotdir] [--nolink]
+           [--exclude PATTERN]
            [--patch filename | -P filename]
   [--inputs | -I] [--minlevel X | -m X]
            [--falsepositive | -F] [--neverignore | -n]
@@ -2349,6 +2402,11 @@ flawfinder [--help | -h] [--version] [--listrules]
               Follow directories whose names begin with ".".
               Normally they are ignored.
   --nolink    Skip symbolic links (ignored).
+  --exclude PATTERN
+              Skip files or directories whose path matches PATTERN
+              (a glob pattern matched against the full path).
+              May be repeated to exclude multiple patterns.
+              Example: --exclude '*/third_party/*'
   --patch F | -P F
               Display information related to the patch F
               (patch must be already applied).
@@ -2445,7 +2503,8 @@ def process_options():
             "omittime", "allowlink", "patch=", "followdotdir", "neverignore",
             "regex=", "quiet", "dataonly", "html", "singleline", "csv",
             "error-level=", "sarif", "sonar",
-            "loadhitlist=", "savehitlist=", "diffhitlist=", "version", "help"
+            "loadhitlist=", "savehitlist=", "diffhitlist=", "version", "help",
+            "exclude="
         ])
         for (opt, value) in optlist:
             if opt in ("--context", "-c"):
@@ -2495,6 +2554,8 @@ def process_options():
                 showheading = 0
             elif opt == "--error-level":
                 error_level = int(value)
+            elif opt == "--exclude":
+                exclude_patterns.append(value)
             elif opt in ("--immediate", "-i"):
                 show_immediately = 1
             elif opt in ("-n", "--neverignore"):
@@ -2699,6 +2760,10 @@ def show_final_results():
             print("Dot directories skipped =", num_dotdirs_skipped, "(--followdotdir overrides)")
             if output_format:
                 print("<br>")
+        if num_encoding_errors > 0:
+            print("Files with encoding errors (skipped) =", num_encoding_errors)
+            if output_format:
+                print("<br>")
         if num_ignored_hits > 0:
             print("Suppressed hits =", num_ignored_hits, "(use --neverignore to show them)")
             if output_format:
@@ -2752,6 +2817,8 @@ def flawfind():
         else:
             show_final_results()
         save_if_desired()
+    if num_encoding_errors:
+        return 15
     return 1 if error_level_exceeded else 0
 
 
