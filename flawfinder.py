@@ -362,7 +362,12 @@ class SarifLogger(object):  # Python 2 compat: explicit new-style class
 
     @staticmethod
     def _to_uri_path(path):
-        return url_quote(path.replace("\\", "/"), safe='/')
+        p = path.replace("\\", "/")
+        while p.startswith("./"):
+            p = p[2:]
+        if p.startswith("-"):
+            p = "./" + p  # prevent misinterpretation as a CLI option
+        return url_quote(p, safe='/')
 
     @staticmethod
     def _append_period(text):
