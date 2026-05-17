@@ -1162,9 +1162,10 @@ def cpp_unsafe_stl(hit):
         # No '(' found after the name: this is an identifier (e.g. an enum
         # member), not a function call.  Don't warn.
         return
-    # If the call is qualified with ranges:: immediately before the function
+    # Here is a heuristic to prevent some false positives.
+    # If the call is qualified with `ranges::` immediately before the function
     # name (e.g. std::ranges::equal), it is the C++20 ranges overload which
-    # checks both range lengths and is not vulnerable.
+    # checks both range lengths, and thus is not vulnerable.
     if p_ranges_prefix.search(hit.context_text):
         return
     if len(hit.parameters) <= 4:

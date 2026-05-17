@@ -78,12 +78,20 @@ test_010: $(FLAWFINDER) test-boost-system.hpp
 	@$(PYTHON) $(FLAWFINDER) --error-level 2 test-boost-system.hpp \
 	  > /dev/null
 
+test_011: $(FLAWFINDER) test-cxx-stl.cpp
+	@echo 'test_011 (C++ STL false-positive fixes)'
+# enum members and std::ranges:: versions must not warn; legacy 3-iterator
+# forms must still warn.
+	@$(PYTHON) $(FLAWFINDER) --omittime -m 1 -DC --quiet \
+	  test-cxx-stl.cpp > test-results-011.txt
+	@diff -u correct-results-011.txt test-results-011.txt
+
 # Run all tests on *one* version of Python;
 # output shows differences from expected results.
 # If everything works as expected, it just prints test numbers.
 # Set PYTHON as needed, including to ""
 test: test_001 test_002 test_003 test_004 test_005 test_006 test_007 test_008 \
-	  test_009 test_010
+	  test_009 test_010 test_011
 	@echo 'All tests pass!'
 
 check: test
