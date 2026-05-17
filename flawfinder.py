@@ -55,6 +55,7 @@ import time
 import csv  # To support generating CSV format
 import hashlib
 import json
+import fnmatch
 try:
     from urllib import quote as url_quote      # Python 2
 except ImportError:
@@ -105,6 +106,7 @@ error_level_exceeded = False
 displayed_header = 0  # Have we displayed the header yet?
 num_ignored_hits = 0  # Number of ignored hits (used if never_ignore==0)
 num_encoding_errors = 0  # Number of files skipped due to encoding errors.
+exclude_patterns = []  # Patterns passed to --exclude
 
 
 def error(message):
@@ -2246,6 +2248,10 @@ c_extensions = {
 }
 
 
+def is_excluded(path):
+    return any(fnmatch.fnmatch(path, pat) for pat in exclude_patterns)
+
+
 def maybe_process_file(f, patch_infos):
     # process f, but only if (1) it's a directory (so we recurse), or
     # (2) it's source code in a language we can handle.
@@ -2272,6 +2278,8 @@ def maybe_process_file(f, patch_infos):
                 print_warning("Skipping directory with initial dot " + h(f))
             num_dotdirs_skipped += 1
             return
+        if is_excluded(f):
+            return
         for dir_entry in os.listdir(f):
             maybe_process_file(os.path.join(f, dir_entry), patch_infos)
     # Now we will FIRST check if the file appears to be a C/C++ file, and
@@ -2292,6 +2300,8 @@ def maybe_process_file(f, patch_infos):
                 # device files, etc. won't cause trouble.
                 if not quiet:
                     print_warning("Skipping non-regular file " + h(f))
+            elif is_excluded(f):
+                pass
             else:
                 # We want to know the difference only with files found in the
                 # patch.
@@ -2367,6 +2377,7 @@ def usage():
     print("""
 flawfinder [--help | -h] [--version] [--listrules]
   [--allowlink] [--followdotdir] [--nolink]
+           [--exclude PATTERN]
            [--patch filename | -P filename]
   [--inputs | -I] [--minlevel X | -m X]
            [--falsepositive | -F] [--neverignore | -n]
@@ -2389,6 +2400,11 @@ flawfinder [--help | -h] [--version] [--listrules]
               Follow directories whose names begin with ".".
               Normally they are ignored.
   --nolink    Skip symbolic links (ignored).
+  --exclude PATTERN
+              Skip files or directories whose path matches PATTERN
+              (a glob pattern matched against the full path).
+              May be repeated to exclude multiple patterns.
+              Example: --exclude '*/third_party/*'
   --patch F | -P F
               Display information related to the patch F
               (patch must be already applied).
@@ -2485,7 +2501,8 @@ def process_options():
             "omittime", "allowlink", "patch=", "followdotdir", "neverignore",
             "regex=", "quiet", "dataonly", "html", "singleline", "csv",
             "error-level=", "sarif", "sonar",
-            "loadhitlist=", "savehitlist=", "diffhitlist=", "version", "help"
+            "loadhitlist=", "savehitlist=", "diffhitlist=", "version", "help",
+            "exclude="
         ])
         for (opt, value) in optlist:
             if opt in ("--context", "-c"):
@@ -2535,7 +2552,8 @@ def process_options():
                 showheading = 0
             elif opt == "--error-level":
                 error_level = int(value)
-
+            elif opt == "--exclude":
+                exclude_patterns.append(value)
             elif opt in ("--immediate", "-i"):
                 show_immediately = 1
             elif opt in ("-n", "--neverignore"):
