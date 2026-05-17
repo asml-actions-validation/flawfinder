@@ -1152,6 +1152,19 @@ Different vulnerability-finding tools tend to find different vulnerabilities.
 Thus, you are best off using human review and a variety of tools.
 This tool can help find some vulnerabilities, but by no means all.
 .PP
+Note that flawfinder is primarily designed to find \fIunintentional\fR
+vulnerabilities (common mistakes) by looking for specific patterns.
+As a result, it is much less likely to find \fImalicious\fR code
+(such as Trojan horses) that has been intentionally inserted.
+Malicious programmers can easily insert code that is not
+detected by this kind of tool.
+This tool should only be used to find unintentional vulnerabilities;
+other techniques (such as thorough human review of all changes)
+are needed to find intentionally malicious code.
+(You can try using AI to analyze for malicious code, but beware, such code
+may include AI-focused injections that themselves may make
+the AI ineffective or malicious.)
+.PP
 You should always analyze a \fIcopy\fP of the source program being analyzed,
 not a directory that can be modified by a developer while flawfinder
 is performing the analysis.
