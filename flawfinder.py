@@ -1935,8 +1935,10 @@ def process_c_file(f, patch_infos):
     linenumber = 1
     ignoreline = -1
 
-    cpplanguage = (f.endswith(".cpp") or f.endswith(".cxx") or f.endswith(".cc")
-                   or f.endswith(".hpp"))
+    # This may be needed for future C++-specific rules, so set it.
+    # pylint: disable=unused-variable
+    cpplanguage = (f.endswith(".cpp") or f.endswith(".cxx") or
+                   f.endswith(".cc") or f.endswith(".hpp"))
     incomment = 0
     instring = 0
     linebegin = 1
