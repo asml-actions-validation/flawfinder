@@ -85,6 +85,12 @@
 	  Fixes https://github.com/david-a-wheeler/flawfinder/issues/78
 	  https://github.com/david-a-wheeler/flawfinder/issues/67
 	  https://github.com/david-a-wheeler/flawfinder/issues/66
+	* Fix false positive: function names inside __attribute__((...)) are
+	  compiler metadata, not callable expressions,
+	  and are no longer flagged.
+	  E.g., __attribute__((format(printf, 1, 2))) no longer triggers a
+	  format-string warning.
+	  Fixes https://github.com/david-a-wheeler/flawfinder/issues/27
 	* Add --exclude PATTERN option (repeatable) to skip files or
 	  directories whose full path matches a glob pattern, e.g.
 	  --exclude '*/third_party/*'. Useful for ignoring generated code,
