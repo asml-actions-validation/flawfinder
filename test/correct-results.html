@@ -46,7 +46,7 @@ Examining test2.c <br>
 <pre>
   _tcsncat(d,s,sizeof(d)); /* Misuse - flag as riskier */
 </pre>
-<li>test.c:64: <b>  [5] </b> (buffer) <i> MultiByteToWideChar:
+<li>test.c:70: <b>  [5] </b> (buffer) <i> MultiByteToWideChar:
   Requires maximum length in CHARACTERS, not bytes (<a
   href="https://cwe.mitre.org/data/definitions/120.html">CWE-120</a>). Risk
   is high, it appears that the size is given as bytes, but the function
@@ -54,7 +54,7 @@ Examining test2.c <br>
 <pre>
   MultiByteToWideChar(CP_ACP,0,szName,-1,wszUserName,sizeof(wszUserName));
 </pre>
-<li>test.c:66: <b>  [5] </b> (buffer) <i> MultiByteToWideChar:
+<li>test.c:72: <b>  [5] </b> (buffer) <i> MultiByteToWideChar:
   Requires maximum length in CHARACTERS, not bytes (<a
   href="https://cwe.mitre.org/data/definitions/120.html">CWE-120</a>). Risk
   is high, it appears that the size is given as bytes, but the function
@@ -62,14 +62,14 @@ Examining test2.c <br>
 <pre>
   MultiByteToWideChar(CP_ACP,0,szName,-1,wszUserName,sizeof wszUserName);
 </pre>
-<li>test.c:77: <b>  [5] </b> (misc) <i> SetSecurityDescriptorDacl:
+<li>test.c:83: <b>  [5] </b> (misc) <i> SetSecurityDescriptorDacl:
   Never create NULL ACLs; an attacker can set it to Everyone (Deny All
   Access), which would even forbid administrator access (<a
   href="https://cwe.mitre.org/data/definitions/732.html">CWE-732</a>). </i></li>
 <pre>
   SetSecurityDescriptorDacl(&amp;sd,TRUE,NULL,FALSE);
 </pre>
-<li>test.c:77: <b>  [5] </b> (misc) <i> SetSecurityDescriptorDacl:
+<li>test.c:83: <b>  [5] </b> (misc) <i> SetSecurityDescriptorDacl:
   Never create NULL ACLs; an attacker can set it to Everyone (Deny All
   Access), which would even forbid administrator access (<a
   href="https://cwe.mitre.org/data/definitions/732.html">CWE-732</a>). </i></li>
@@ -153,7 +153,7 @@ Examining test2.c <br>
 <pre>
   lstrcat(d,s);
 </pre>
-<li>test.c:79: <b>  [3] </b> (shell) <i> CreateProcess:
+<li>test.c:85: <b>  [3] </b> (shell) <i> CreateProcess:
   This causes a new process to execute and is difficult to use safely (<a
   href="https://cwe.mitre.org/data/definitions/78.html">CWE-78</a>). Specify
   the application path in the first argument, NOT as part of the second, or
@@ -162,7 +162,7 @@ Examining test2.c <br>
 <pre>
   CreateProcess(NULL, "C:\\Program Files\\GoodGuy\\GoodGuy.exe -x", "");
 </pre>
-<li>test.c:79: <b>  [3] </b> (shell) <i> CreateProcess:
+<li>test.c:85: <b>  [3] </b> (shell) <i> CreateProcess:
   This causes a new process to execute and is difficult to use safely (<a
   href="https://cwe.mitre.org/data/definitions/78.html">CWE-78</a>). Specify
   the application path in the first argument, NOT as part of the second, or
@@ -171,7 +171,7 @@ Examining test2.c <br>
 <pre>
   CreateProcess(NULL, "C:\\Program Files\\GoodGuy\\GoodGuy.exe -x", "");
 </pre>
-<li>test.c:81: <b>  [3] </b> (misc) <i> LoadLibraryEx:
+<li>test.c:87: <b>  [3] </b> (misc) <i> LoadLibraryEx:
   Ensure that the full path to the library is specified, or current directory
   may be used (<a
   href="https://cwe.mitre.org/data/definitions/829.html">CWE-829</a>, <a
@@ -181,7 +181,7 @@ Examining test2.c <br>
 <pre>
   (void) LoadLibraryEx(L"user32.dll", nullptr, LOAD_LIBRARY_AS_DATAFILE);
 </pre>
-<li>test.c:99: <b>  [3] </b> (buffer) <i> getopt_long:
+<li>test.c:105: <b>  [3] </b> (buffer) <i> getopt_long:
   Some older implementations do not protect against internal buffer overflows
   (<a href="https://cwe.mitre.org/data/definitions/120.html">CWE-120</a>, <a
   href="https://cwe.mitre.org/data/definitions/20.html">CWE-20</a>). Check
@@ -253,7 +253,7 @@ Examining test2.c <br>
 <pre>
   CopyMemory(d,s);
 </pre>
-<li>test.c:105: <b>  [2] </b> (misc) <i> fopen:
+<li>test.c:111: <b>  [2] </b> (misc) <i> fopen:
   Check when opening files - can an attacker redirect it (via symlinks),
   force the opening of special file type (e.g., device files), move things
   around to create a race condition, control its ancestors, or change its
@@ -314,14 +314,14 @@ Examining test2.c <br>
 <pre>
   n = strlen(d);
 </pre>
-<li>test.c:68: <b>  [1] </b> (buffer) <i> MultiByteToWideChar:
+<li>test.c:74: <b>  [1] </b> (buffer) <i> MultiByteToWideChar:
   Requires maximum length in CHARACTERS, not bytes (<a
   href="https://cwe.mitre.org/data/definitions/120.html">CWE-120</a>). Risk
   is very low, the length appears to be in characters not bytes. </i></li>
 <pre>
   MultiByteToWideChar(CP_ACP,0,szName,-1,wszUserName,sizeof(wszUserName)/sizeof(wszUserName[0]));
 </pre>
-<li>test.c:70: <b>  [1] </b> (buffer) <i> MultiByteToWideChar:
+<li>test.c:76: <b>  [1] </b> (buffer) <i> MultiByteToWideChar:
   Requires maximum length in CHARACTERS, not bytes (<a
   href="https://cwe.mitre.org/data/definitions/120.html">CWE-120</a>). Risk
   is very low, the length appears to be in characters not bytes. </i></li>
@@ -333,13 +333,13 @@ Examining test2.c <br>
 <p>
 Hits = 39
 <br>
-Lines analyzed = 126
+Lines analyzed = 132
 <br>
-Physical Source Lines of Code (SLOC) = 86
+Physical Source Lines of Code (SLOC) = 91
 <br>
 Hits@level = [0]  16 [1]   9 [2]   9 [3]   4 [4]  10 [5]   7 <br>
 Hits@level+ = [0+]  55 [1+]  39 [2+]  30 [3+]  21 [4+]  17 [5+]   7 <br>
-Hits/KSLOC@level+ = [0+] 639.535 [1+] 453.488 [2+] 348.837 [3+] 244.186 [4+] 197.674 [5+] 81.3953 <br>
+Hits/KSLOC@level+ = [0+] 604.396 [1+] 428.571 [2+] 329.67 [3+] 230.769 [4+] 186.813 [5+] 76.9231 <br>
 Suppressed hits = 2 (use --neverignore to show them)
 <br>
 Minimum risk level = 1

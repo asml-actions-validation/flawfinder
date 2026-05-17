@@ -60,6 +60,12 @@ demo2() {
   strncat(d,s,sizeof(d)); /* Misuse - this should be flagged as riskier. */
   _tcsncat(d,s,sizeof(d)); /* Misuse - flag as riskier */
   n = strlen(d);
+  /* strlen of a string literal: should NOT be flagged (always null-terminated) */
+  n = strlen("hello");
+  n = strlen(L"wide");
+  n = strlen(u"utf16");
+  n = strlen(U"utf32");
+  n = strlen(u8"utf8");
   /* This is wrong, and should be flagged as risky: */
   MultiByteToWideChar(CP_ACP,0,szName,-1,wszUserName,sizeof(wszUserName));
   /* This is also wrong, and should be flagged as risky: */

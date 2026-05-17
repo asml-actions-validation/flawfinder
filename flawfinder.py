@@ -913,8 +913,9 @@ def c_singleton_string(text):
     return 1 if p_c_singleton_string.search(text) else 0
 
 
-# This string defines a C constant.
-p_c_constant_string = re.compile(r'^\s*L?"([^\\]|\\[^0-6]|\\[0-6]+)*"$')
+# This string defines a C constant.  The optional prefix covers:
+#   L (wide), u (UTF-16, C11/C++11), U (UTF-32, C11/C++11), u8 (UTF-8, C11/C++11).
+p_c_constant_string = re.compile(r'^\s*(u8?|U|L)?"([^\\]|\\[^0-6]|\\[0-6]+)*"$')
 
 
 def c_constant_string(text):
@@ -1184,6 +1185,14 @@ def load_library_ex(hit):
 def normal(hit):
     add_warning(hit)
 
+@hook
+def c_strlen(hit):
+    # String literals are always null-terminated, so the "not null-terminated"
+    # warning does not apply.
+    if len(hit.parameters) >= 2 and c_constant_string(hit.parameters[1]):
+        return
+    normal(hit)
+
 # Ignore "system" if it's "system::" (that is, a C++ namespace such as
 # boost::system::...), because that produces too many false positives.
 # We ignore spaces before "::"
@@ -1355,7 +1364,7 @@ c_ruleset = {
      "buffer", "", {'input': 1, 'format_position': 2}, "FF1021"),
 
     "strlen|wcslen|_tcslen|_mbslen":
-    (normal,
+    (c_strlen,
      # Often this isn't really a risk, and even when it is, at worst it
      # often causes a program crash (and nothing worse).
      1,
