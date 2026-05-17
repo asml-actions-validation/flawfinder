@@ -56,7 +56,7 @@ import csv  # To support generating CSV format
 import hashlib
 import json
 
-version = "2.0.19"
+version = "2.0.20"
 
 # Program Options - these are the default values.
 # TODO: Switch to boolean types where appropriate.
