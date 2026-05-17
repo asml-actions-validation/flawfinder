@@ -1,4 +1,4 @@
-Flawfinder version 2.0.19, (C) 2001-2019 David A. Wheeler.
+Flawfinder version 2.0.20, (C) 2001-2019 David A. Wheeler.
 Number of rules (primarily dangerous function names) in C/C++ ruleset: 222
 Examining test.c
 Examining test2.c
@@ -18,18 +18,18 @@ test.c:61:  [5] (buffer) _tcsncat:
   size to add) [MS-banned] (CWE-120). Consider strcat_s, strlcat, or
   automatically resizing strings. Risk is high; the length parameter appears
   to be a constant, instead of computing the number of characters left.
-test.c:64:  [5] (buffer) MultiByteToWideChar:
+test.c:70:  [5] (buffer) MultiByteToWideChar:
   Requires maximum length in CHARACTERS, not bytes (CWE-120). Risk is high,
   it appears that the size is given as bytes, but the function requires size
   as characters.
-test.c:66:  [5] (buffer) MultiByteToWideChar:
+test.c:72:  [5] (buffer) MultiByteToWideChar:
   Requires maximum length in CHARACTERS, not bytes (CWE-120). Risk is high,
   it appears that the size is given as bytes, but the function requires size
   as characters.
-test.c:77:  [5] (misc) SetSecurityDescriptorDacl:
+test.c:83:  [5] (misc) SetSecurityDescriptorDacl:
   Never create NULL ACLs; an attacker can set it to Everyone (Deny All
   Access), which would even forbid administrator access (CWE-732).
-test.c:77:  [5] (misc) SetSecurityDescriptorDacl:
+test.c:83:  [5] (misc) SetSecurityDescriptorDacl:
   Never create NULL ACLs; an attacker can set it to Everyone (Deny All
   Access), which would even forbid administrator access (CWE-732).
 test.c:17:  [4] (buffer) strcpy:
@@ -65,21 +65,21 @@ test.c:49:  [4] (buffer) _mbscpy:
 test.c:56:  [4] (buffer) lstrcat:
   Does not check for buffer overflows when concatenating to destination
   [MS-banned] (CWE-120).
-test.c:79:  [3] (shell) CreateProcess:
+test.c:85:  [3] (shell) CreateProcess:
   This causes a new process to execute and is difficult to use safely
   (CWE-78). Specify the application path in the first argument, NOT as part
   of the second, or embedded spaces could allow an attacker to force a
   different program to run.
-test.c:79:  [3] (shell) CreateProcess:
+test.c:85:  [3] (shell) CreateProcess:
   This causes a new process to execute and is difficult to use safely
   (CWE-78). Specify the application path in the first argument, NOT as part
   of the second, or embedded spaces could allow an attacker to force a
   different program to run.
-test.c:81:  [3] (misc) LoadLibraryEx:
+test.c:87:  [3] (misc) LoadLibraryEx:
   Ensure that the full path to the library is specified, or current directory
   may be used (CWE-829, CWE-20). Use a flag like LOAD_LIBRARY_SEARCH_SYSTEM32
   or LOAD_LIBRARY_SEARCH_APPLICATION_DIR to search only desired folders.
-test.c:99:  [3] (buffer) getopt_long:
+test.c:105:  [3] (buffer) getopt_long:
   Some older implementations do not protect against internal buffer overflows
   (CWE-120, CWE-20). Check implementation on installation, or limit the size
   of all string inputs.
@@ -112,7 +112,7 @@ test.c:54:  [2] (buffer) memcpy:
 test.c:55:  [2] (buffer) CopyMemory:
   Does not check for buffer overflows when copying to destination (CWE-120).
   Make sure destination can always hold the source data.
-test.c:105:  [2] (misc) fopen:
+test.c:111:  [2] (misc) fopen:
   Check when opening files - can an attacker redirect it (via symlinks),
   force the opening of special file type (e.g., device files), move things
   around to create a race condition, control its ancestors, or change its
@@ -141,21 +141,21 @@ test.c:59:  [1] (buffer) strncat:
 test.c:62:  [1] (buffer) strlen:
   Does not handle strings that are not \0-terminated; if given one it may
   perform an over-read (it could cause a crash if unprotected) (CWE-126).
-test.c:68:  [1] (buffer) MultiByteToWideChar:
+test.c:74:  [1] (buffer) MultiByteToWideChar:
   Requires maximum length in CHARACTERS, not bytes (CWE-120). Risk is very
   low, the length appears to be in characters not bytes.
-test.c:70:  [1] (buffer) MultiByteToWideChar:
+test.c:76:  [1] (buffer) MultiByteToWideChar:
   Requires maximum length in CHARACTERS, not bytes (CWE-120). Risk is very
   low, the length appears to be in characters not bytes.
 
 ANALYSIS SUMMARY:
 
 Hits = 39
-Lines analyzed = 126
-Physical Source Lines of Code (SLOC) = 86
+Lines analyzed = 132
+Physical Source Lines of Code (SLOC) = 91
 Hits@level = [0]  16 [1]   9 [2]   9 [3]   4 [4]  10 [5]   7
 Hits@level+ = [0+]  55 [1+]  39 [2+]  30 [3+]  21 [4+]  17 [5+]   7
-Hits/KSLOC@level+ = [0+] 639.535 [1+] 453.488 [2+] 348.837 [3+] 244.186 [4+] 197.674 [5+] 81.3953
+Hits/KSLOC@level+ = [0+] 604.396 [1+] 428.571 [2+] 329.67 [3+] 230.769 [4+] 186.813 [5+] 76.9231
 Suppressed hits = 2 (use --neverignore to show them)
 Minimum risk level = 1
 

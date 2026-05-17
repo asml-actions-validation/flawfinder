@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """flawfinder: Find potential security flaws ("hits") in source code.
  Usage:
@@ -56,7 +56,7 @@ import csv  # To support generating CSV format
 import hashlib
 import json
 
-version = "2.0.19"
+version = "2.0.20"
 
 # Program Options - these are the default values.
 # TODO: Switch to boolean types where appropriate.
@@ -132,24 +132,27 @@ def to_json(o):
     return json.dumps(o, default=lambda o: o.__dict__, sort_keys=False, indent=2)
 
 
-class SonarLogger(object):
+# pylint: disable-next=too-few-public-methods
+class SonarLogger(object):  # Python 2 compat: explicit new-style class
     _hitlist = None
 
     def __init__ (self, hits):
         self._hitlist = hits
 
     def output_sonar(self):
-        str  = '<?xml version="1.0" encoding="UTF-8"?>\n'
-        str += '<results>\n'
+        result  = '<?xml version="1.0" encoding="UTF-8"?>\n'
+        result += '<results>\n'
         for hit in self._hitlist:
             file = os.path.realpath(hit.filename)
             msg  = quoteattr(hit.warning)
-            str += '\t<error id="flawfinder.%s" file="%s" line="%s" column="%s" msg=%s />\n' % \
-                (hit.name, file, hit.line, hit.column, msg)
-        str += '</results>'
-        return str
+            result += '\t<error id=%s file=%s line=%s column=%s msg=%s />\n' % \
+                (quoteattr("flawfinder." + hit.name), quoteattr(file),
+                 quoteattr(str(hit.line)), quoteattr(str(hit.column)), msg)
+        result += '</results>'
+        return result
 
-class SonarRulesLogger(object):
+# pylint: disable-next=too-few-public-methods
+class SonarRulesLogger(object):  # Python 2 compat: explicit new-style class
     _ruleset = None
 
     def __init__(self, rules):
@@ -172,33 +175,34 @@ class SonarRulesLogger(object):
             'tmpfile':  'Temporary file vulnerability using function "%s"',
             'free':     'Avoid usage of function "%s"'
         }
-        str  = '<?xml version="1.0" encoding="UTF-8"?>\n'
-        str += '<rules>\n'
+        result  = '<?xml version="1.0" encoding="UTF-8"?>\n'
+        result += '<rules>\n'
         for key in self._ruleset.keys():
             name = RULE_NAMES[self._ruleset[key][4]] % (key)
-            str += '\t<rule>\n'
-            str += '\t\t<key>flawfinder.%s</key>\n' % (key)
-            str += '\t\t<name>%s</name>\n' % (name)
-            str += '\t\t<description><![CDATA[%s.' % (self._ruleset[key][2])
+            result += '\t<rule>\n'
+            result += '\t\t<key>flawfinder.%s</key>\n' % (key)
+            result += '\t\t<name>%s</name>\n' % (name)
+            result += '\t\t<description><![CDATA[%s.' % (self._ruleset[key][2])
             if self._ruleset[key][3] != '':
-                str += ' %s' % (self._ruleset[key][3])
-            str += ']]></description>\n'
-            str += '\t\t<internalKey>flawfinder/%s</internalKey>\n' % (key)
-            str += '\t\t<severity>%s</severity>\n' % (SONAR_SEVERITIES[self._ruleset[key][1]])
-            str += '\t\t<type>VULNERABILITY</type>\n'
-            str += '\t\t<tag>cwe</tag>\n'
-            str += '\t\t<tag>flawfinder</tag>\n'
-            str += '\t\t<remediationFunction>CONSTANT_ISSUE</remediationFunction>\n'
-            str += '\t\t<remediationFunctionBaseEffort>2min</remediationFunctionBaseEffort>\n'
-            str += '\t</rule>\n'
-        str += '</rules>'
-        return str
+                result += ' %s' % (self._ruleset[key][3])
+            result += ']]></description>\n'
+            result += '\t\t<internalKey>flawfinder/%s</internalKey>\n' % (key)
+            result += '\t\t<severity>%s</severity>\n' % (SONAR_SEVERITIES[self._ruleset[key][1]])
+            result += '\t\t<type>VULNERABILITY</type>\n'
+            result += '\t\t<tag>cwe</tag>\n'
+            result += '\t\t<tag>flawfinder</tag>\n'
+            result += '\t\t<remediationFunction>CONSTANT_ISSUE</remediationFunction>\n'
+            result += '\t\t<remediationFunctionBaseEffort>2min</remediationFunctionBaseEffort>\n'
+            result += '\t</rule>\n'
+        result += '</rules>'
+        return result
 
 # The following implements the SarifLogger.
 # We intentionally merge all of flawfinder's functionality into 1 file
 # so it's trivial to copy & use elsewhere.
 
-class SarifLogger(object):
+# pylint: disable-next=too-few-public-methods
+class SarifLogger(object):  # Python 2 compat: explicit new-style class
     _hitlist = None
     TOOL_NAME = "Flawfinder"
     TOOL_URL = "https://dwheeler.com/flawfinder/"
@@ -250,16 +254,16 @@ class SarifLogger(object):
         jsonstr = to_json(report)
         return jsonstr
 
-    def _extract_rules(self, hitlist):
+    def _extract_rules(self, hits):
         rules = {}
-        for hit in hitlist:
+        for hit in hits:
             if not hit.ruleid in rules:
                 rules[hit.ruleid] = self._to_sarif_rule(hit)
         return list(rules.values())
 
-    def _extract_results(self, hitlist):
+    def _extract_results(self, hits):
         results = []
-        for hit in hitlist:
+        for hit in hits:
             results.append(self._to_sarif_result(hit))
         return results
 
@@ -369,7 +373,7 @@ class SarifLogger(object):
 #    --- OLDFILENAME OLDTIMESTAMP
 #    +++ NEWFILENAME NEWTIMESTAMP
 #    @@ -OLDSTART,OLDLENGTH +NEWSTART,NEWLENGTH @@
-#    ... Changes where preceeding "+" is add, "-" is remove, " " is unchanged.
+#    ... Changes where preceding "+" is add, "-" is remove, " " is unchanged.
 #
 #    ",OLDLENGTH" and ",NEWLENGTH" are optional  (they default to 1).
 #    GNU unified diff format doesn't normally output "Index:"; you use
@@ -468,6 +472,7 @@ def load_patch_info(input_patch_file):
     line_counter = 0
     initial_number = 0
     try:
+        # pylint: disable-next=unspecified-encoding,consider-using-with
         hPatch = open(input_patch_file, 'r')
     except BaseException:
         print("Error: failed to open", h(input_patch_file))
@@ -536,13 +541,23 @@ def load_patch_info(input_patch_file):
     return patch
 
 
+_UNSAFE_CTRL = re.compile(r'[\x00-\x1f\x7f-\x9f]')
+
+
+def strip_controls(s):
+    # Replace control characters with visible \xNN escapes to prevent
+    # terminal injection via crafted filenames.
+    return _UNSAFE_CTRL.sub(lambda m: "\\x%02x" % ord(m.group(0)), s)
+
+
 def htmlize(s):
     # Take s, and return legal (UTF-8) HTML.
     return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
 
 def h(s):
-    # htmlize s if we're generating html, otherwise just return s.
+    # Strip control characters (defense in depth), then htmlize if generating HTML.
+    s = strip_controls(s)
     return htmlize(s) if output_format else s
 
 
@@ -573,7 +588,7 @@ link_cwe_pattern = re.compile(r'(CWE-([1-9][0-9]+))([,()!/])')
 find_cwe_pattern = re.compile(r'\(CWE-[^)]*\)')
 
 
-class Hit(object):
+class Hit(object):  # Python 2 compat: explicit new-style class
     """
     Each instance of Hit is a warning of some kind in a source code file.
     See the rulesets, which define the conditions for triggering a hit.
@@ -610,8 +625,8 @@ class Hit(object):
     extract_lookahead = 0  # Normally don't extract lookahead.
 
     def __init__(self, data):
-        hook, level, warning, suggestion, category, url, other, ruleid = data
-        self.hook, self.level, self.defaultlevel = hook, level, level
+        fn, level, warning, suggestion, category, url, other, ruleid = data
+        self.hook, self.level, self.defaultlevel = fn, level, level
         self.warning, self.suggestion = warning, suggestion
         self.category, self.url = category, url
         self.ruleid = ruleid
@@ -621,8 +636,14 @@ class Hit(object):
         self.line = 0
         self.name = ""
         self.context_text = ""
+        self.start = None
+        self.end = None
+        self.parameters = None
+        self.lookahead = None  # set only when extract_lookahead is true
+        _allowed_keys = {'check_for_null', 'extract_lookahead', 'format_position', 'input'}
         for key in other:
-            setattr(self, key, other[key])
+            if key in _allowed_keys:
+                setattr(self, key, other[key])
 
     def __getitem__(self, X):  # Define this so this works: "%(line)" % hit
         return getattr(self, X)
@@ -661,9 +682,12 @@ class Hit(object):
     # Show as CSV format
     def show_csv(self):
         csv_writer.writerow([
-            self.filename, self.line, self.column, self.defaultlevel, self.level, self.category,
-            self.name, self.warning + ".", self.suggestion + "." if self.suggestion else "", self.note,
-            self.cwes(), self.context_text, self.fingerprint(),
+            strip_controls(self.filename), self.line, self.column, self.defaultlevel, self.level,
+            strip_controls(str(self.category)),
+            strip_controls(self.name), strip_controls(self.warning) + ".",
+            strip_controls(self.suggestion) + "." if self.suggestion else "",
+            strip_controls(self.note),
+            self.cwes(), strip_controls(self.context_text), self.fingerprint(),
             version, self.ruleid, self.helpuri()
         ])
 
@@ -687,10 +711,10 @@ class Hit(object):
         if output_format:
             print(" <b>", end='')
         # Extra space before risk level in text, makes it easier to find:
-        print("  [%(level)s]" % self, end=' ')
+        print("  [%s]" % strip_controls(str(self.level)), end=' ')
         if output_format:
             print("</b> ", end='')
-        print("(%(category)s)" % self, end=' ')
+        print("(%s)" % strip_controls(str(self.category)), end=' ')
         if output_format:
             print("<i> ", end='')
         print(h("%(name)s:" % self), end='')
@@ -728,8 +752,41 @@ class Hit(object):
 hitlist = []
 
 
+_hooks = {}  # name -> function; populated by the @hook decorator
+
+
+def hook(fn):
+    """Decorator that registers fn as a valid flawfinder ruleset hook.
+
+    Serves two purposes: it populates the allowlist used by SafeUnpickler
+    when loading saved hitlists, and it enables startup validation that every
+    hook referenced in the ruleset has been registered (see _check_ruleset_hooks).
+    """
+    _hooks[fn.__name__] = fn
+    return fn
+
+
+class SafeUnpickler(pickle.Unpickler):
+    """Unpickler restricted to Hit and the functions registered with @hook.
+
+    A malicious pickle stream can execute arbitrary code during loading.
+    This subclass overrides find_class() to block everything except the
+    symbols that legitimately appear in a saved hitlist.
+    Works in Python 2 and Python 3.
+    """
+
+    # flawfinder may be run as __main__ or imported as a module.
+    _ALLOWED_MODULES = frozenset({'__main__', 'flawfinder'})
+
+    def find_class(self, module, name):
+        if module in self._ALLOWED_MODULES and (name == 'Hit' or name in _hooks):
+            return super(SafeUnpickler, self).find_class(module, name)  # Python 2 compat
+        raise pickle.UnpicklingError(
+            "Blocked unsafe class in hitlist pickle: {}.{}".format(module, name))
+
+
 def add_warning(hit):
-    global hitlist, num_ignored_hits
+    global num_ignored_hits
     if show_inputs and not hit.input:
         return
     if required_regex and (required_regex_compiled.search(hit.warning) is
@@ -758,7 +815,7 @@ def extract_c_parameters(text, pos=0):
     while i < len(text):
         if text[i] == '(':
             break
-        elif text[i] in string.whitespace:
+        if text[i] in string.whitespace:
             i += 1
         else:
             return []
@@ -839,9 +896,11 @@ def extract_c_parameters(text, pos=0):
 # so will get confused by patterns like  gettext("hi") + function("bye")
 # In practice, this doesn't seem to be a problem; gettext() is usually
 # wrapped around the entire parameter.
-# The ?s makes it posible to match multi-line strings.
+# The ?s makes it possible to match multi-line strings.
+# pylint: disable=implicit-str-concat
 gettext_pattern = re.compile(r'(?s)^\s*' 'gettext' r'\s*\((.*)\)\s*$')
 undersc_pattern = re.compile(r'(?s)^\s*' '_(T(EXT)?)?' r'\s*\((.*)\)\s*$')
+# pylint: enable=implicit-str-concat
 
 
 def strip_i18n(text):
@@ -868,8 +927,9 @@ def c_singleton_string(text):
     return 1 if p_c_singleton_string.search(text) else 0
 
 
-# This string defines a C constant.
-p_c_constant_string = re.compile(r'^\s*L?"([^\\]|\\[^0-6]|\\[0-6]+)*"$')
+# This string defines a C constant.  The optional prefix covers:
+#   L (wide), u (UTF-16, C11/C++11), U (UTF-32, C11/C++11), u8 (UTF-8, C11/C++11).
+p_c_constant_string = re.compile(r'^\s*(u8?|U|L)?"([^\\]|\\[^0-6]|\\[0-6]+)*"$')
 
 
 def c_constant_string(text):
@@ -881,6 +941,7 @@ def c_constant_string(text):
 p_memcpy_sizeof = re.compile(r'sizeof\s*\(\s*([^)\s]*)\s*\)')
 p_memcpy_param_amp = re.compile(r'&?\s*(.*)')
 
+@hook
 def c_memcpy(hit):
     if len(hit.parameters) < 4: # 3 parameters
         add_warning(hit)
@@ -892,6 +953,7 @@ def c_memcpy(hit):
         add_warning(hit)
 
 
+@hook
 def c_buffer(hit):
     source_position = hit.source_position
     if source_position <= len(hit.parameters) - 1:
@@ -914,6 +976,7 @@ p_dangerous_strncat = re.compile(r'^\s*sizeof\s*(\(\s*)?[A-Za-z_$0-9]+'
 p_looks_like_constant = re.compile(r'^\s*[A-Z][A-Z_$0-9]+\s*(-\s*1\s*)?$')
 
 
+@hook
 def c_strncat(hit):
     if len(hit.parameters) > 3:
         # A common mistake is to think that when calling strncat(dest,src,len),
@@ -949,6 +1012,7 @@ def c_strncat(hit):
     c_buffer(hit)
 
 
+@hook
 def c_printf(hit):
     format_position = hit.format_position
     if format_position <= len(hit.parameters) - 1:
@@ -971,6 +1035,7 @@ p_dangerous_sprintf_format = re.compile(r'%-?([0-9]+|\*)?s')
 
 
 # sprintf has both buffer and format vulnerabilities.
+@hook
 def c_sprintf(hit):
     source_position = hit.source_position
     if hit.parameters is None:
@@ -1008,6 +1073,7 @@ p_dangerous_scanf_format = re.compile(r'%s')
 p_low_risk_scanf_format = re.compile(r'%[0-9]+s')
 
 
+@hook
 def c_scanf(hit):
     format_position = hit.format_position
     if format_position <= len(hit.parameters) - 1:
@@ -1045,6 +1111,7 @@ p_safe_multi_byte = re.compile(
     r'/\s*sizeof\s*\(\s*?[A-Za-z_$0-9]+\s*\[\s*0\s*\]\)\s*(-\s*1\s*)?$')
 
 
+@hook
 def c_multi_byte_to_wide_char(hit):
     # Unfortunately, this doesn't detect bad calls when it's a #define or
     # constant set by a sizeof(), but trying to do so would create
@@ -1069,6 +1136,7 @@ def c_multi_byte_to_wide_char(hit):
 p_null_text = re.compile(r'^ *(NULL|0|0x0) *$')
 
 
+@hook
 def c_hit_if_null(hit):
     null_position = hit.check_for_null
     if null_position <= len(hit.parameters) - 1:
@@ -1083,6 +1151,7 @@ def c_hit_if_null(hit):
 p_static_array = re.compile(r'^[A-Za-z_]+\s+[A-Za-z0-9_$,\s\*()]+\[[^]]')
 
 
+@hook
 def c_static_array(hit):
     # This is cheating, but it does the job for most real code.
     # In some cases it will match something that it shouldn't.
@@ -1093,10 +1162,26 @@ def c_static_array(hit):
         add_warning(hit)  # Found a static array, warn about it.
 
 
+# Matches the C++20 ranges:: qualifier immediately before the function name.
+# std::ranges::equal / mismatch / is_permutation check both range lengths
+# automatically and are safe; only the legacy iterator forms are risky.
+p_ranges_prefix = re.compile(r'ranges::\s*(equal|mismatch|is_permutation)\b')
+
+@hook
 def cpp_unsafe_stl(hit):
     # Use one of the overloaded classes from the STL in C++14 and higher
-    # instead of the <C++14 versions of theses functions that did not
+    # instead of the <C++14 versions of these functions that did not
     # if the second iterator could overflow
+    if not hit.parameters:
+        # No '(' found after the name: this is an identifier (e.g. an enum
+        # member), not a function call.  Don't warn.
+        return
+    # Here is a heuristic to prevent some false positives.
+    # If the call is qualified with `ranges::` immediately before the function
+    # name (e.g. std::ranges::equal), it is the C++20 ranges overload which
+    # checks both range lengths, and thus is not vulnerable.
+    if p_ranges_prefix.search(hit.context_text):
+        return
     if len(hit.parameters) <= 4:
         add_warning(hit)
 
@@ -1117,6 +1202,7 @@ safe_load_library_flags = [
     'LOAD_LIBRARY_SAFE_CURRENT_DIRS'
 ]
 
+@hook
 def load_library_ex(hit):
     # If parameter 3 has one of the flags below, it's safe.
     if (len(hit.parameters) >= 4 and
@@ -1124,12 +1210,22 @@ def load_library_ex(hit):
         return
     normal(hit)
 
+@hook
 def normal(hit):
     add_warning(hit)
+
+@hook
+def c_strlen(hit):
+    # String literals are always null-terminated, so the "not null-terminated"
+    # warning does not apply.
+    if len(hit.parameters) >= 2 and c_constant_string(hit.parameters[1]):
+        return
+    normal(hit)
 
 # Ignore "system" if it's "system::" (that is, a C++ namespace such as
 # boost::system::...), because that produces too many false positives.
 # We ignore spaces before "::"
+@hook
 def found_system(hit):
     follow_text = hit.lookahead[len(hit.name):].lstrip()
     if not follow_text.startswith('::'):
@@ -1205,7 +1301,7 @@ c_ruleset = {
     "lstrcpyn|wcsncpy|_tcsncpy|_mbsnbcpy":
     (c_buffer,
      1,  # Low risk level, because this is often used correctly when FIXING security
-     # problems, and raising it to a higher risk levle would cause many false
+     # problems, and raising it to a higher risk level would cause many false
      # positives.
      "Easily used incorrectly; doesn't always \\0-terminate or "
      "check for invalid pointers [MS-banned] (CWE-120)",
@@ -1297,7 +1393,7 @@ c_ruleset = {
      "buffer", "", {'input': 1, 'format_position': 2}, "FF1021"),
 
     "strlen|wcslen|_tcslen|_mbslen":
-    (normal,
+    (c_strlen,
      # Often this isn't really a risk, and even when it is, at worst it
      # often causes a program crash (and nothing worse).
      1,
@@ -1685,6 +1781,20 @@ template_ruleset = {
     "9": (normal, 2, "", "", "tmpfile", "", {}),
 }
 
+# Validate that every hook function referenced in the rulesets has been
+# registered with @hook.  This runs at import time so a missing @hook
+# decorator is caught immediately, not only when loading a saved hitlist.
+def _check_ruleset_hooks(ruleset):
+    for entry in ruleset.values():
+        fn = entry[0]  # first element of each tuple is the hook function
+        if fn.__name__ not in _hooks:
+            raise AssertionError(
+                "Hook function {!r} used in ruleset but not decorated "
+                "with @hook; add the decorator to fix.".format(fn.__name__))
+
+_check_ruleset_hooks(c_ruleset)
+_check_ruleset_hooks(template_ruleset)
+
 
 def find_column(text, position):
     "Find column number inside line."
@@ -1711,7 +1821,7 @@ def c_valid_match(text, position):
         c = text[i]
         if c == '(':
             return 1
-        elif c in string.whitespace:
+        if c in string.whitespace:
             i += 1
         else:
             if falsepositive:
@@ -1765,6 +1875,10 @@ numberset = string.hexdigits + "_x.Ee"
 p_whitespace = re.compile(r'[ \t\v\f]+')
 p_include = re.compile(r'#\s*include\s+(<.*?>|".*?")')
 p_digits = re.compile(r'[0-9]')
+# Characters valid inside a numeric literal body: decimal/hex digits,
+# decimal point, exponent letters (e/E decimal, p/P hex float), and
+# digit separator. Frozenset gives O(1) membership test in the hot loop.
+num_body_chars = frozenset("0123456789abcdefABCDEF.eEpP'")
 p_alphaunder = re.compile(r'[A-Za-z_]')  # Alpha chars and underline.
 # A "word" in C.  Note that "$" is permitted -- it's not permitted by the
 # C standard in identifiers, but gcc supports it as an extension.
@@ -1796,7 +1910,7 @@ def process_c_file(f, patch_infos):
             if output_format:
                 print("Skipping unpatched file ", h(f), "<br>")
             else:
-                print("Skipping unpatched file", f)
+                print("Skipping unpatched file", h(f))
             sys.stdout.flush()
         return
 
@@ -1809,6 +1923,7 @@ def process_c_file(f, patch_infos):
             num_links_skipped += 1
             return
         try:
+            # pylint: disable-next=unspecified-encoding,consider-using-with
             my_input = open(f, "r")
         except BaseException:
             print("Error: failed to open", h(f))
@@ -1826,7 +1941,7 @@ def process_c_file(f, patch_infos):
         if output_format:
             print("Examining", h(f), "<br>")
         else:
-            print("Examining", f)
+            print("Examining", h(f))
         sys.stdout.flush()
 
     # Python3 is often configured to use only UTF-8, and presumes
@@ -1967,10 +2082,15 @@ def process_c_file(f, patch_infos):
                                 hit.lookahead = text[startpos:
                                                      startpos + max_lookahead]
                             hit.hook(hit)
-                elif p_digits.match(c):
-                    while i < len(text): # Process a number.
-                        # C does not have digit separator
-                        if p_digits.match(text[i]) or (cpplanguage and text[i] == "'"):
+                elif p_digits.match(c) or (c == '.' and p_digits.match(nextc)):
+                    # Skip number literals: decimal, hex (0x...), binary (0b...), floats.
+                    if c == '0' and i < len(text) and text[i] in 'bBxX':
+                        i += 1  # Skip binary (0b) or hex (0x) prefix letter.
+                    while i < len(text):
+                        ch = text[i]
+                        if ch in num_body_chars:
+                            if ch in 'pPeE' and i + 1 < len(text) and text[i + 1] in '+-':
+                                i += 1  # Skip sign following float exponent.
                             i += 1
                         else:
                             break
@@ -2093,6 +2213,12 @@ def maybe_process_file(f, patch_infos):
     # has a known C/C++ filename extension.  If it doesn't, we ignore the file.
     # We accept symlinks only if allowlink is true.
     global num_links_skipped, num_dotdirs_skipped
+    if _UNSAFE_CTRL.search(f):
+        # A filename with control characters is almost certainly an attack
+        # (e.g. ANSI escape sequences crafted to forge a clean-scan result).
+        # Use repr() for the warning so the bad bytes can't affect the terminal.
+        print_warning("Skipping file with control characters in filename: " + repr(f))
+        return
     if os.path.isdir(f):
         if (not allowlink) and os.path.islink(f):
             if not quiet:
@@ -2147,6 +2273,9 @@ def process_file_args(files, patch_infos):
     # and skip the rest to prevent security problems. "-" is stdin.
     global num_links_skipped
     for f in files:
+        if _UNSAFE_CTRL.search(f):
+            print_warning("Skipping file with control characters in filename: " + repr(f))
+            continue
         if (not allowlink) and os.path.islink(f):
             if not quiet:
                 print_warning("Skipping symbolic link " + h(f))
@@ -2182,8 +2311,8 @@ def process_file_args(files, patch_infos):
                 # name, and it exists, we'll process it without complaint.
                 if (h(f).startswith("\xe2\x80\x93") or
                         h(f).startswith("\xe2\x80\x94") or
-                        h(f).startswith(u"\u2013") or
-                        h(f).startswith(u"\u2014")):
+                        h(f).startswith("\u2013") or
+                        h(f).startswith("\u2014")):
                     print_warning(
                         "Skipping non-existent filename starting with em dash or en dash "
                         + h(f))
@@ -2285,8 +2414,12 @@ flawfinder [--help | -h] [--version] [--listrules]
               Save all hits (the "hitlist") to F.
   --loadhitlist=F
               Load hits from F instead of analyzing source programs.
+              Only use hitlists you created; untrusted hitlists could
+              contain misleading results.
   --diffhitlist=F
               Show only hits (loaded or analyzed) not in F.
+              Only use hitlists you created; untrusted hitlists could
+              contain misleading results.
 
 
   For more information, please consult the manpage or available
@@ -2431,19 +2564,18 @@ def process_files():
     """Process input (files or hitlist); return True if okay."""
     global hitlist
     if loadhitlist:
-        f = open(loadhitlist, "rb")
-        hitlist = pickle.load(f)
+        with open(loadhitlist, "rb") as f:
+            hitlist = SafeUnpickler(f).load()
         return True
-    else:
-        patch_infos = None
-        if patch_file != "":
-            patch_infos = load_patch_info(patch_file)
-        files = sys.argv[1:]
-        if not files:
-            print("*** No input files")
-            return None
-        process_file_args(files, patch_infos)
-        return True
+    patch_infos = None
+    if patch_file != "":
+        patch_infos = load_patch_info(patch_file)
+    files = sys.argv[1:]
+    if not files:
+        print("*** No input files")
+        return None
+    process_file_args(files, patch_infos)
+    return True
 
 
 def hitlist_sort_key(hit):
@@ -2452,7 +2584,6 @@ def hitlist_sort_key(hit):
 
 
 def show_final_results():
-    global hitlist
     global error_level_exceeded
     count = 0
     count_per_level = {}
@@ -2476,9 +2607,10 @@ def show_final_results():
     # <ul> so that the format differentiates each entry.
     # I'm not using <ol>, because its numbers might be confused with
     # the risk levels or line numbers.
+    diff_hitlist = []
     if diffhitlist_filename:
-        diff_file = open(diffhitlist_filename, 'rb')
-        diff_hitlist = pickle.load(diff_file)
+        with open(diffhitlist_filename, 'rb') as diff_file:
+            diff_hitlist = SafeUnpickler(diff_file).load()
     if output_format:
         print("<ul>")
     for hit in hitlist:
@@ -2604,9 +2736,8 @@ def save_if_desired():
     if savehitlist:
         if not quiet:
             print("Saving hitlist to", savehitlist)
-        f = open(savehitlist, "wb")
-        pickle.dump(hitlist, f)
-        f.close()
+        with open(savehitlist, "wb") as f:
+            pickle.dump(hitlist, f)
 
 
 def flawfind():

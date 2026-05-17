@@ -1,25 +1,25 @@
 '\"
-.\" (C) Copyright 2001-2018 David A. Wheeler (dwheeler@dwheeler.com)
+.\" (C) Copyright 2001-2026 David A. Wheeler (dwheeler@dwheeler.com)
 .\"
 .\" This program is free software; you can redistribute it and/or modify
 .\" it under the terms of the GNU General Public License as published by
 .\" the Free Software Foundation; either version 2 of the License, or
 .\" (at your option) any later version.
-.\" 
+.\"
 .\" This program is distributed in the hope that it will be useful,
 .\" but WITHOUT ANY WARRANTY; without even the implied warranty of
 .\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 .\" GNU General Public License for more details.
-.\" 
+.\"
 .\" You should have received a copy of the GNU General Public License
 .\" along with this program; if not, write to the Free Software
 .\" Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-.\" 
+.\"
 .\"
 .\"
 .\" Man page created 17 May 2001 by David A. Wheeler (dwheeler@dwheeler.com)
 .\"
-.TH FLAWFINDER 1 "3 Jun 2021" "Flawfinder" "Flawfinder"
+.TH FLAWFINDER 1 "3 May 2026" "Flawfinder" "Flawfinder"
 .SH NAME
 flawfinder \- lexically find potential security flaws ("hits") in source code
 .SH SYNOPSIS
@@ -111,7 +111,7 @@ banned list of functions released by Microsoft; see
 http://msdn.microsoft.com/en-us/library/bb288454.aspx
 for more information about banned functions.
 .PP
-Not every hit (aka finding) is actually a security vulnerability, 
+Not every hit (aka finding) is actually a security vulnerability,
 and not every security vulnerability is necessarily found.
 Nevertheless, flawfinder can be an aid in finding and removing
 security vulnerabilities.
@@ -182,6 +182,20 @@ and other oddities that more sophisticated tools have trouble with.
 Flawfinder can also be useful as a simple
 introduction to static analysis tools in general,
 since it is easy to start using and easy to understand.
+.PP
+The limitations of flawfinder impact any analysis, but they can be
+especially limiting when analyzing C++.
+C++ is notoriously hard to parse correctly.
+A lexical system like flawfinder is limited in what it can do
+when constructs such as namespaces and class scopes are used.
+Flawfinder uses various heuristics to improve its effectiveness.
+However, flawfinder will tend to be more effective on C++ programs that
+are "mostly C with a few C++ additions" and less effective on C++ programs
+that use "full modern C++" with significant use of these features.
+.PP
+Flawfinder can be used alongside AI-based code analysis tools.
+Flawfinder output can be used to quickly identify which areas of code
+deserve closer attention, which an AI system can then examine in more detail.
 .PP
 Any filename given on the command line will be examined (even if
 it doesn't have a usual C/C++ filename extension); thus you can force
@@ -609,10 +623,9 @@ Save all resulting hits (the "hitlist") to F.
 .TP
 \fB\-\-loadhitlist=\fR\fIF\fR
 Load the hitlist from F instead of analyzing source programs.
-Warning: Do \fInot\fR load hitlists from untrusted sources
-(for security reasons).
-These are internally implemented using Python's "pickle" facility,
-which trusts the input.
+Hitlists are intended for use by the same user who created them.
+A hitlist from an untrusted source could contain misleading results,
+such as fabricated hits or omitted findings.
 Note that stored hitlists often cannot be read when using an older version
 of Python, in particular, if savehitlist was used but
 flawfinder was run using Python 3,
@@ -622,8 +635,8 @@ the hitlist can't be loaded by running flawfinder with Python 2.
 \fB\-\-diffhitlist=\fR\fIF\fR
 Show only hits (loaded or analyzed) not in F.
 F was presumably created previously using \-\-savehitlist.
-Warning: Do \fInot\fR diff hitlists from untrusted sources
-(for security reasons).
+A hitlist from an untrusted source could contain misleading results;
+use only hitlists you created yourself.
 If the \-\-loadhitlist option is not provided, this will show the hits in
 the analyzed source code files that were not previously stored in F.
 If used along with \-\-loadhitlist, this will show the hits in the
@@ -1139,6 +1152,19 @@ Different vulnerability-finding tools tend to find different vulnerabilities.
 Thus, you are best off using human review and a variety of tools.
 This tool can help find some vulnerabilities, but by no means all.
 .PP
+Note that flawfinder is primarily designed to find \fIunintentional\fR
+vulnerabilities (common mistakes) by looking for specific patterns.
+As a result, it is much less likely to find \fImalicious\fR code
+(such as Trojan horses) that has been intentionally inserted.
+Malicious programmers can easily insert code that is not
+detected by this kind of tool.
+This tool should only be used to find unintentional vulnerabilities;
+other techniques (such as thorough human review of all changes)
+are needed to find intentionally malicious code.
+(You can try using AI to analyze for malicious code, but beware, such code
+may include AI-focused injections that themselves may make
+the AI ineffective or malicious.)
+.PP
 You should always analyze a \fIcopy\fP of the source program being analyzed,
 not a directory that can be modified by a developer while flawfinder
 is performing the analysis.
@@ -1193,12 +1219,15 @@ COM1-COM9, and LPT1-LPT9, optionally followed by an extension
 (Windows is case-insensitive).
 .\" See 'Writing Secure Code' by Howard and LeBlanc, pg. 223
 .PP
-Do \fInot\fR load or diff hitlists from untrusted sources.
-They are implemented using the Python pickle module, and the pickle
-module is not intended to be secure against
-erroneous or maliciously constructed data.
-Stored hitlists are intended for later use by the same user who created
-the hitlist; in that context this restriction is not a problem.
+Stored hitlists are intended for use by the same user who created them.
+A hitlist from an untrusted source could contain misleading results,
+such as fabricated hits or omitted findings; always use hitlists you
+created yourself.
+Hitlists are stored in the Python "pickle" format.
+Flawfinder now takes steps to block malicious hitlist content
+(though old versions did not).
+However, flawfinder cannot
+detect hitlists that contain incorrect but structurally valid data.
 
 .SH BUGS
 .PP

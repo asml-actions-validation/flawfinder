@@ -1,3 +1,64 @@
+2026-05-16 David A. Wheeler
+	* Version 2.0.19
+	  Fix unlikely vulnerabilities (involving malicious filenames/text
+	  in analyzed systems) and implement various improvements
+	* Fix security vulnerabilities found by Gemini:
+	  - Terminal injection in standard output: apply strip_controls() to
+	    level and category in show().
+	  - Terminal injection in CSV output: apply strip_controls() to all
+	    untrusted fields in show_csv() (category, name, warning,
+	    suggestion, note, context_text).
+	  - XML injection in SonarQube output: use quoteattr() for all XML
+	    attributes in output_sonar().
+	  - Defense-in-depth: restrict setattr in Hit.__init__ to an allowlist
+	    of known keys used by rule definitions, countering pickle attacks.
+	    We previously warned to not load untrusted pickle files, but
+	    completely preventing attacks is better.
+	  - Shell injection in CI/CD file entrypoint.sh:
+	    quoted args with "$@" and moved output filename to
+	    FLAWFINDER_OUTPUT env var in action.yml.
+	* Fix terminal injection vulnerability via crafted filenames.
+	  A malicious file whose name contained ANSI escape sequences
+	  (e.g. ESC[2K CR ESC[32m[OK]...) could cause flawfinder's
+	  terminal output to be overwritten, e.g., so it falsely appeared
+	  that no security issues were found. Filenames containing
+	  control characters are now rejected with a warning.
+	  As defense in depth, h() and show_csv() also strip control
+	  characters from filenames before output.
+	  Reported by Dan Lenz (thank you!!).
+	* Reject malicious pickles on hitlist load. Hitlists (--loadhitlist,
+	  --diffhitlist) are now loaded via SafeUnpickler, a restricted
+	  unpickler that only allows the specific classes and hook functions
+	  that appear in legitimate hitlists. Arbitrary code execution from
+	  a crafted hitlist file is blocked. A @hook decorator registers each
+	  hook function, and a startup check ensures the allowlist stays in
+	  sync with the ruleset automatically.
+	* Fix false positive: strlen() on a string literal (e.g.,
+	  strlen("foo"), strlen(L"wide"), strlen(u8"utf8")) is always safe
+	  because string literals are guaranteed null-terminated. No warning
+	  is now issued in this case.
+	  Fixes https://sourceforge.net/p/flawfinder/bugs/24/
+	* Fix false positive: equal(), mismatch(), and is_permutation() used
+	  as identifiers (e.g. enum members) rather than function calls no
+	  longer produce spurious warnings.
+	  Fixes https://sourceforge.net/p/flawfinder/bugs/28/
+	* Fix false positive: std::ranges::equal(), std::ranges::mismatch(),
+	  and std::ranges::is_permutation() (C++20) check both range lengths
+	  automatically and are not vulnerable to over-read; they are no
+	  longer flagged.
+	  Fixes https://sourceforge.net/p/flawfinder/bugs/29/
+	* Fix typos in comments (preceeding, posible, theses, levle).
+	  Fixes https://sourceforge.net/p/flawfinder/bugs/27/
+	* Added CI workflow (GitHub Actions) to run the test suite on every
+	  push and pull request.
+	* Updated pylintrc for pylint 4.x compatibility.
+	* Added Sonar output format (--sonar). Thanks to Patschkowski.
+	* Updated CWE list delimiters.
+	* Added missing CWEs to FF1057 warning text.
+	* Removed duplicate word in help text.
+	* Fixed missing closing </li> tags in HTML output.
+	* Fixed typos in documentation.
+
 2021-08-29 David A. Wheeler
 	* Version 2.0.19
 	* Fix so we send error messages to stderr instead of stdout.
