@@ -50,9 +50,13 @@ test_006: $(FLAWFINDER) test.c
 
 test_007: $(SETUPPY)
 	@echo 'test_007 (setup.py sane)'
-	@test "`$(PYTHON) $(SETUPPY) --name`" = 'flawfinder'
-	@test "`$(PYTHON) $(SETUPPY) --license`" = 'GPL-2.0+'
-	@test "`$(PYTHON) $(SETUPPY) --author`" = 'David A. Wheeler'
+	@if $(PYTHON) -c 'import setuptools' 2>/dev/null; then \
+		test "`$(PYTHON) $(SETUPPY) --name`" = 'flawfinder' && \
+		test "`$(PYTHON) $(SETUPPY) --license`" = 'GPL-2.0+' && \
+		test "`$(PYTHON) $(SETUPPY) --author`" = 'David A. Wheeler'; \
+	else \
+		echo '  SKIP: setuptools not installed'; \
+	fi
 
 test_008: $(FLAWFINDER) test.c
 	@echo 'test_008 (diff hitlist)'
