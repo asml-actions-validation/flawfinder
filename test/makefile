@@ -89,6 +89,14 @@ test_011: $(FLAWFINDER) test-cxx-stl.cpp
 	  test-cxx-stl.cpp > test-results-011.txt
 	@diff -u correct-results-011.txt test-results-011.txt
 
+test_013: $(FLAWFINDER) test-member-calls.cpp
+	@echo 'test_013 (member/namespace calls not flagged; global calls still flagged)'
+# Method calls (obj.f, ptr->f) and named-namespace calls (ns::f) must not
+# produce hits; bare global calls and ::f (explicit global scope) must still hit.
+	@$(PYTHON) $(FLAWFINDER) --omittime -m 1 -DC --quiet \
+	  test-member-calls.cpp > test-results-013.txt
+	@diff -u correct-results-013.txt test-results-013.txt
+
 test_012: $(FLAWFINDER) test-modern-cpp.cpp
 	@echo 'test_012 (modern C++ lexing: binary/hex literals, hex floats, digit separators)'
 # Modern C++ syntax must produce zero hits (no false positives from the lexer).
@@ -101,7 +109,7 @@ test_012: $(FLAWFINDER) test-modern-cpp.cpp
 # If everything works as expected, it just prints test numbers.
 # Set PYTHON as needed, including to ""
 test: test_001 test_002 test_003 test_004 test_005 test_006 test_007 test_008 \
-	  test_009 test_010 test_011 test_012
+	  test_009 test_010 test_011 test_012 test_013
 	@echo 'All tests pass!'
 
 check: test
@@ -117,5 +125,6 @@ test-is-correct: test-results.txt
 	cp -p test-results-008.txt correct-results-008.txt
 	cp -p test-results-011.txt correct-results-011.txt
 	cp -p test-results-012.txt correct-results-012.txt
+	cp -p test-results-013.txt correct-results-013.txt
 
 .PHONY: test check test-is-correct

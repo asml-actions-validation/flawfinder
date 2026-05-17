@@ -1843,6 +1843,35 @@ def c_valid_match(text, position):
     return 0  # Never found anything other than "(" and whitespace.
 
 
+def _preceded_by_member_or_namespace(text, startpos):
+    """Return True if the word at startpos is a member call via '.' or '->'.
+
+    Suppresses false positives on method calls such as obj.read() and
+    ptr->read() where a dangerous function name is used as a method, not
+    as the global C function.
+
+    Namespace-qualified calls (ns::func) are intentionally NOT suppressed
+    here: some namespace-qualified calls are still dangerous (e.g.
+    std::equal with three iterators), so that decision is left to the
+    individual rule hooks.
+
+    Only horizontal whitespace (space, tab) is skipped; newlines are
+    treated as boundaries.
+    """
+    j = startpos - 1
+    while j >= 0 and text[j] in ' \t':
+        j -= 1
+    if j < 0:
+        return False
+    # obj.func()
+    if text[j] == '.':
+        return True
+    # ptr->func()
+    if j >= 1 and text[j-1:j+1] == '->':
+        return True
+    return False
+
+
 def process_directive():
     "Given a directive, process it."
     global ignoreline, num_ignored_hits
@@ -2060,7 +2089,9 @@ def process_c_file(f, patch_infos):
                     i = endpos
                     word = text[startpos:endpos]
                     # print "Word is:", text[startpos:endpos]
-                    if (word in c_ruleset) and c_valid_match(text, endpos):
+                    if (word in c_ruleset) and \
+                       not _preceded_by_member_or_namespace(text, startpos) and \
+                       c_valid_match(text, endpos):
                         if ((patch_infos is None)
                                 or ((patch_infos is not None) and
                                     (linenumber in patch_infos[f]))):
