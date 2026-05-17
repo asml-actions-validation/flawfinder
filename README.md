@@ -108,7 +108,7 @@ Create a .yml file under .github/workflows with the following contents:
 
 ```yml
 - name: flawfinder_scan
-  uses: david-a-wheeler/flawfinder@2.0.19
+  uses: david-a-wheeler/flawfinder@2.0.20
   with:
     arguments: '--sarif ./'
     output: 'flawfinder_results.sarif'
