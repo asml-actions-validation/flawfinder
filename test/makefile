@@ -55,7 +55,7 @@ test_007: $(SETUPPY)
 		test "`$(PYTHON) $(SETUPPY) --license`" = 'GPL-2.0+' && \
 		test "`$(PYTHON) $(SETUPPY) --author`" = 'David A. Wheeler'; \
 	else \
-		echo '  SKIP: setuptools not installed'; \
+		echo '  SKIP: setuptools not installed (fix: pip3 install setuptools)'; \
 	fi
 
 test_008: $(FLAWFINDER) test.c
