@@ -64,14 +64,13 @@ test_008: $(FLAWFINDER) test.c
 	  test-results-008.txt
 	@diff -u correct-results-008.txt test-results-008.txt
 
-test_009: $(FLAWFINDER) test-cpp-digit-separator.cpp
-	@echo 'test_009 (C++ digit separator)'
-# C++ file should have no problem recognizing ' as digit separator
+test_009: $(FLAWFINDER) test-cpp-digit-separator.cpp test-cpp-digit-separator.c
+	@echo 'test_009 (digit separator in numeric literals)'
+# Both C++ and C files should handle ' as a digit separator without error,
+# since C23 added digit separators and flawfinder cannot determine which
+# C standard version is in use.
 	@$(PYTHON) $(FLAWFINDER) test-cpp-digit-separator.cpp > /dev/null
-# C file should fail with unterminated char literal error
-	@$(PYTHON) $(FLAWFINDER) test-cpp-digit-separator.c 2>&1 \
-		| grep 'File ended while in string.' \
-		> /dev/null
+	@$(PYTHON) $(FLAWFINDER) test-cpp-digit-separator.c > /dev/null
 
 test_010: $(FLAWFINDER) test-boost-system.hpp
 	@echo 'test_010 (system:: ignored)'
@@ -86,12 +85,19 @@ test_011: $(FLAWFINDER) test-cxx-stl.cpp
 	  test-cxx-stl.cpp > test-results-011.txt
 	@diff -u correct-results-011.txt test-results-011.txt
 
+test_012: $(FLAWFINDER) test-modern-cpp.cpp
+	@echo 'test_012 (modern C++ lexing: binary/hex literals, hex floats, digit separators)'
+# Modern C++ syntax must produce zero hits (no false positives from the lexer).
+	@$(PYTHON) $(FLAWFINDER) --omittime -m 1 -DC --quiet \
+	  test-modern-cpp.cpp > test-results-012.txt
+	@diff -u correct-results-012.txt test-results-012.txt
+
 # Run all tests on *one* version of Python;
 # output shows differences from expected results.
 # If everything works as expected, it just prints test numbers.
 # Set PYTHON as needed, including to ""
 test: test_001 test_002 test_003 test_004 test_005 test_006 test_007 test_008 \
-	  test_009 test_010 test_011
+	  test_009 test_010 test_011 test_012
 	@echo 'All tests pass!'
 
 check: test
@@ -105,5 +111,7 @@ test-is-correct: test-results.txt
 	cp -p test-results-005.txt correct-results-005.txt
 	cp -p test-results-006.txt correct-results-006.txt
 	cp -p test-results-008.txt correct-results-008.txt
+	cp -p test-results-011.txt correct-results-011.txt
+	cp -p test-results-012.txt correct-results-012.txt
 
 .PHONY: test check test-is-correct

@@ -1875,6 +1875,10 @@ numberset = string.hexdigits + "_x.Ee"
 p_whitespace = re.compile(r'[ \t\v\f]+')
 p_include = re.compile(r'#\s*include\s+(<.*?>|".*?")')
 p_digits = re.compile(r'[0-9]')
+# Characters valid inside a numeric literal body: decimal/hex digits,
+# decimal point, exponent letters (e/E decimal, p/P hex float), and
+# digit separator. Frozenset gives O(1) membership test in the hot loop.
+num_body_chars = frozenset("0123456789abcdefABCDEF.eEpP'")
 p_alphaunder = re.compile(r'[A-Za-z_]')  # Alpha chars and underline.
 # A "word" in C.  Note that "$" is permitted -- it's not permitted by the
 # C standard in identifiers, but gcc supports it as an extension.
@@ -2078,10 +2082,15 @@ def process_c_file(f, patch_infos):
                                 hit.lookahead = text[startpos:
                                                      startpos + max_lookahead]
                             hit.hook(hit)
-                elif p_digits.match(c):
-                    while i < len(text): # Process a number.
-                        # C does not have digit separator
-                        if p_digits.match(text[i]) or (cpplanguage and text[i] == "'"):
+                elif p_digits.match(c) or (c == '.' and p_digits.match(nextc)):
+                    # Skip number literals: decimal, hex (0x...), binary (0b...), floats.
+                    if c == '0' and i < len(text) and text[i] in 'bBxX':
+                        i += 1  # Skip binary (0b) or hex (0x) prefix letter.
+                    while i < len(text):
+                        ch = text[i]
+                        if ch in num_body_chars:
+                            if ch in 'pPeE' and i + 1 < len(text) and text[i + 1] in '+-':
+                                i += 1  # Skip sign following float exponent.
                             i += 1
                         else:
                             break
