@@ -8,6 +8,11 @@ for vulnerabilities, and it can also serve as a simple introduction to
 static source code analysis tools more generally.  It is designed to
 be easy to install and use.  Flawfinder supports the Common Weakness
 Enumeration (CWE) and is officially CWE-Compatible.
+It supports various output formats including SARIF, SonarQube, and HTML.
+
+Flawfinder can be used alongside AI-based code analysis tools.
+Flawfinder output can be used to quickly identify which areas of code
+deserve closer attention, which an AI system can then examine in more detail.
 
 For more information, see the [project website](http://dwheeler.com/flawfinder)
 
@@ -15,7 +20,8 @@ For more information, see the [project website](http://dwheeler.com/flawfinder)
 
 Flawfinder is designed for use on Unix/Linux/POSIX systems
 (including Cygwin, Linux-based systems, MacOS, and various BSDs) as a
-command line tool.  It requires either Python 2.7 or Python 3.
+command line tool.  It requires Python (we test with Python 3;
+Python 2.7 should work but this is increasingly untested).
 
 # Installation
 
@@ -86,12 +92,13 @@ you can install `cvt2utf` using `pip install cvt2utf`.
 More technically, flawfinder uses lexical scanning to find tokens
 (such as function names) that suggest likely vulnerabilities, estimates their
 level of risk (e.g., by the text of function calls), and reports the results.
-Flawfinder does not use or have access to information about control flow,
-data flow, or data types.  Thus, flawfinder will necessarily
+Flawfinder does not use or have access to most information about control flow,
+data flow, data types, namespaces, and scopes.
+Thus, flawfinder will necessarily
 produce many false positives for vulnerabilities and fail to report
 many vulnerabilities.  On the other hand, flawfinder can find
 vulnerabilities in programs that cannot be built or cannot be linked.
-Flawfinder also doesn't get as confused by macro definitions
+Flawfinder also doesn't get as confused by most macro definitions
 and other oddities that more sophisticated tools have trouble with.
 
 # Flawfinder GitHub Action

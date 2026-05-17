@@ -14,7 +14,7 @@
 #
 # Currently this program can only analyze C/C++ code.
 #
-# Copyright (C) 2001-2019 David A. Wheeler.
+# Copyright (C) 2001-2026 David A. Wheeler.
 # This is released under the
 # GNU General Public License (GPL) version 2 or later (GPL-2.0+):
 #
@@ -2179,9 +2179,9 @@ def display_header():
             print("<h1>Flawfinder Results</h1>")
             print("Here are the security scan results from")
             print('<a href="https://dwheeler.com/flawfinder">Flawfinder version %s</a>,' % version)
-            print('(C) 2001-2019 <a href="https://dwheeler.com">David A. Wheeler</a>.')
+            print('(C) 2001-2026 <a href="https://dwheeler.com">David A. Wheeler</a>.')
         else:
-            print("Flawfinder version %s, (C) 2001-2019 David A. Wheeler." % version)
+            print("Flawfinder version %s, (C) 2001-2026 David A. Wheeler." % version)
         displayed_header = 1
 
 
