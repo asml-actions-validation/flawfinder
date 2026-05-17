@@ -100,6 +100,7 @@ error_level_exceeded = False
 
 displayed_header = 0  # Have we displayed the header yet?
 num_ignored_hits = 0  # Number of ignored hits (used if never_ignore==0)
+num_encoding_errors = 0  # Number of files skipped due to encoding errors.
 
 
 def error(message):
@@ -1980,7 +1981,9 @@ def process_c_file(f, patch_infos):
     try:
         text = "".join(my_input.readlines())
     except UnicodeDecodeError as err:
-        print('Error: encoding error in', h(f))
+        global num_encoding_errors
+        num_encoding_errors += 1
+        print('Warning: encoding error in', h(f), '-- skipping file.')
         print(err)
         print()
         print('Python3 requires input character data to be perfectly encoded;')
@@ -2005,7 +2008,7 @@ def process_c_file(f, patch_infos):
         print('Some of these options may not work depending on circumstance.')
         print('In the long term, we recommend using UTF-8 for source code.')
         print('For more information, see the documentation.')
-        sys.exit(15)
+        return
 
     i = 0
     while i < len(text):
@@ -2526,6 +2529,7 @@ def process_options():
                 showheading = 0
             elif opt == "--error-level":
                 error_level = int(value)
+
             elif opt in ("--immediate", "-i"):
                 show_immediately = 1
             elif opt in ("-n", "--neverignore"):
@@ -2730,6 +2734,10 @@ def show_final_results():
             print("Dot directories skipped =", num_dotdirs_skipped, "(--followdotdir overrides)")
             if output_format:
                 print("<br>")
+        if num_encoding_errors > 0:
+            print("Files with encoding errors (skipped) =", num_encoding_errors)
+            if output_format:
+                print("<br>")
         if num_ignored_hits > 0:
             print("Suppressed hits =", num_ignored_hits, "(use --neverignore to show them)")
             if output_format:
@@ -2783,6 +2791,8 @@ def flawfind():
         else:
             show_final_results()
         save_if_desired()
+    if num_encoding_errors:
+        return 15
     return 1 if error_level_exceeded else 0
 
 
